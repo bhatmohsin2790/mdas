@@ -1,0 +1,334 @@
+<%@ include file="getConnection.jsp"%>
+<%@include file="report_header.jsp" %>
+<%@page import="java.text.DecimalFormat"%> 
+<%@page import="java.text.*"%>
+<%!     PreparedStatement pstmt, pstmt1, pstmt2 = null;
+    ResultSet rs, rs1, rs2 = null;
+    double ctr = 1.0, ptr = 1.0, Actr = 1.0, Aptr = 1.0;
+    double vmf = 1.0, cmf = 1.0, pmf = 1.0;
+    double mf = 1.0;
+    DecimalFormat df1 = new DecimalFormat("#0.000");
+    String locationName = "";
+    String meter_id = "";
+%>
+<%
+    if (request.getParameter("meter_id") == null || request.getParameter("meter_id") == "") {
+        meter_id = (String) session.getAttribute("meter_id");
+    } else {
+        meter_id = request.getParameter("meter_id");
+    }
+    int data_type = 1; //2 - completed data   1 - Latest data
+    double aemf = 1.0;
+    if (request.getParameter("ApplyEMF") != null) {
+        aemf = Double.parseDouble(request.getParameter("ApplyEMF"));
+    } else {
+        System.out.println("Apply EMF is not available ");
+    }//end else        
+    if (request.getParameter("data_type") == null || request.getParameter("data_type") == "") {
+    } else {
+        data_type = Integer.parseInt(request.getParameter("data_type"));
+    }
+%>
+<table bordercolor="white" width="100%" border="0">   
+    <tr     >
+        <td colspan="6" align="center" class="head1">
+            INSTANTANEOUS DATA
+            <a style="text-align: right;padding-right: 10px;float:right;" href="javascript:exportInstant(<%=data_type%>)">Export</a></td>
+    </tr>
+</table>
+<table bordercolor="white" border="0" width="100%" style="font-size:11px;background-color:white;" id="dtable">
+    <thead>
+        <tr  style="color: white; font-weight: bold;" valign="bottom">            
+            <td align="center" rowspan="2" width="130px" style="min-width:125px;" >Reading Date Time</td>            
+            <td align="center" colspan="3" rowspan="1">Phase Voltages&nbsp;&nbsp;(V)</td>
+            <td align="center" colspan="3" rowspan="1">Line Current</td>
+            <td align="center" colspan="4" rowspan="1">Power Factors</td>
+            <td align="center" colspan="3" rowspan="1">Powers</td>
+            <td align="center" rowspan="1" style="color: white; font-weight: bold;min-width: 40px;">Freq</td>            
+        </tr>
+        
+        <tr  align="center">
+            <td width="7.3%">R</td>
+            <td width="7.3%">Y</td>
+            <td width="7.3%">B</td>
+            <td width="7.3%">R</td>
+            <td width="7.3%">Y</td>
+            <td width="7.3%">B</td>
+            <!-- <td width="7.3%">R</td>
+             <td width="7.3%">Y</td>
+             <td width="7.3%">B</td>
+             <td width="7.3%">R</td>
+             <td width="7.3%">Y</td>
+             <td width="7.3%">B</td>-->
+            <td width="7.3%">R</td>
+            <td width="7.3%">Y</td>
+            <td width="7.3%">B</td>
+            <td width="7.3%">Avg</td>
+            <td width="8%">&nbsp;Act(kW)&nbsp;</td>
+            <td width="10%">&nbsp;App(kVA)&nbsp;</td>
+            <td width="10%">&nbsp;React(kVAr)&nbsp;</td>
+            <td width="10%">&nbsp;&nbsp;</td>
+            <!--<td width="10%">&nbsp;Kwh</td>
+            <td width="10%">&nbsp;Kvah &nbsp;</td>-->
+            <!--<td width="13%"></td>-->
+        </tr>
+    </thead>
+    <%
+        try {
+            String stringToReturn = "";
+            String meter_sl_no = "", columns = "";
+            pstmt = con.prepareStatement("select meter_serial_no,ml.locationname from meter,meterlocation ml where meterid=" + meter_id + " and meterlocation=ml.locationid");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                meter_sl_no = rs.getString("meter_serial_no");
+                locationName = rs.getString(2);
+            }
+            session.setAttribute("meter_sl_no", meter_sl_no);
+            if (data_type == 2)// complete data
+            {
+    %>        
+    <tbody >
+        <%
+            SimpleDateFormat sdf=new SimpleDateFormat("dd/MM/yyyy");
+            SimpleDateFormat sdf1=new SimpleDateFormat("yyyy-MM-dd");
+            
+            String sdate = request.getParameter("sdate");
+            String edate = request.getParameter("edate");
+          System.out.println(sdate+"\t"+edate);  
+            sdate=sdf1.format(sdf.parse(sdate));
+            edate=sdf1.format(sdf.parse(edate));
+            
+            int start = Integer.parseInt(request.getParameter("start"));
+            
+            String sql = null;
+            if (sdate.equals("") && edate.equals(""))//Complete data without date selection
+            {
+            } else {
+                System.out.println(sdate+"\t"+edate+"Date Range Selected---------------------------------------------------->");
+                pstmt2 = con.prepareStatement("select * from meter where meterid=" + meter_id);
+                rs2 = pstmt2.executeQuery();
+                if (rs2.next()) {
+                    ctr = Double.parseDouble(rs2.getString("METER_CTR"));
+                    ptr = Double.parseDouble(rs2.getString("METER_PTR"));
+                    String ACTR = rs2.getString("ADOPTED_CTR");
+                    if (ACTR.contains("/")) {
+                        String numerator = ACTR.substring(0, ACTR.indexOf("/"));
+                        String denominator = ACTR.substring(ACTR.indexOf("/") + 1);
+                        Actr = Double.valueOf(numerator) / Double.valueOf(denominator);
+                    } else {
+                        Actr = Double.parseDouble(rs2.getString("ADOPTED_CTR"));
+                    }
+                    Aptr = Double.parseDouble(rs2.getString("ADOPTED_PTR"));
+                    // cmf = (Actr / Aptr) * (ctr / ptr);
+                    vmf = Double.parseDouble(df1.format(Aptr / ptr));
+                    cmf = Double.parseDouble(df1.format(Actr / ctr));
+                    pmf = Double.parseDouble(rs2.getString("mf"));
+                    
+                }
+                if (aemf == 0)//without MF
+                {
+                    vmf = 1.0;
+                    cmf = 1.0;
+                    pmf = 1.0;
+                }
+                
+                if (DBUtil.getTargetDB().equals("oracle")) {
+                    sql = "SELECT g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current, "
+                            + "yph_line_current,bph_line_current,rph_power_factor,yph_power_factor, "
+                            + " bph_power_factor,avg_power_factor,FUND_ACT_POWER,APPARENT_POWER,REACT_POWER, "
+                            + "FREQUENCY,RPH_ACTIVE_CURRENT,YPH_ACTIVE_CURRENT,BPH_ACTIVE_CURRENT,RPH_REACT_CURRENT, "
+                            + " BPH_REACT_CURRENT,YPH_REACT_CURRENT,meter_time_stamp,log_time_stamp,meterid,rownum r  "
+                            + " from d2 where  regexp_like(trim(rph_voltage), '^[0-9]') and meter_serial_no='"+meter_sl_no+"' and (to_TIMESTAMP(g2,'dd-mm-yyyy hh24:mi:SS') >= to_date('" + sdate + " 00:00:00','YYYY-mm-DD hh24:mi:ss') and "
+                            + "to_TIMESTAMP(g2,'dd-mm-yyyy hh24:mi:SS') <= to_date('" + edate + " 23:59:00','YYYY-mm-DD hh24:mi:ss') )  order by to_date(g3,'DD-MM-YYYY HH24:MI:SS') desc";
+                    System.out.println("Date sql  " + sql);
+                    pstmt = con.prepareStatement(sql);
+                   
+                  
+                } else if (DBUtil.getTargetDB().equals("mysql")) {
+                    sql = "select TIMESTAMPDIFF(SECOND,str_to_date(g3,'%d-%m-%Y %H:%i:%s'),log_time_stamp) timediff,g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current,yph_line_current,"
+                            + "bph_line_current,rph_power_factor,yph_power_factor,bph_power_factor,"
+                            + "avg_power_factor,FUND_ACT_POWER,APPARENT_POWER,REACT_POWER,"
+                            + "FREQUENCY,RPH_ACTIVE_CURRENT,YPH_ACTIVE_CURRENT,"
+                            + "BPH_ACTIVE_CURRENT,RPH_REACT_CURRENT,BPH_REACT_CURRENT,"
+                            + "YPH_REACT_CURRENT from d2 where meterid=? and "
+                            + "str_to_date(g2,'%d-%m-%Y') >= str_to_date('" + sdate + "','%d/%m/%Y') and "
+                            + "str_to_date(g2,'%d-%m-%Y') <= str_to_date('" + edate + "','%d/%m/%Y') "
+                            + "order by meter_time_stamp desc limit ?,?";
+                    start = start - 1;
+                    pstmt = con.prepareStatement(sql);
+                    pstmt.setString(1, meter_id);
+                   
+                }//end else if
+                rs = pstmt.executeQuery();
+                String dataString = "";
+                while (rs.next()) {
+                    
+                    if (true) {//status
+                        //status = false;
+                       %>
+        <tr  align="center">
+          
+            <%--  <td ><%=meter_sl_no%></td>--%>
+            <td ><%=rs.getString("g3") == null ? "" : rs.getString("g3")%></td>
+            <%--<td ><%=rs.getString("g3") == null ? "" : rs.getString("g3").substring(10)%></td>--%>
+            <td ><%=rs.getString("rph_voltage") == null ? "" : df1.format((Double.parseDouble(rs.getString("rph_voltage"))) * vmf)%></td>
+            <td ><%=rs.getString("yph_voltage") == null ? "" : df1.format((Double.parseDouble(rs.getString("yph_voltage"))) * vmf)%></td>
+            <td ><%=rs.getString("bph_voltage") == null ? "" : df1.format((Double.parseDouble(rs.getString("bph_voltage"))) * vmf)%></td>
+            <td ><%=rs.getString("RPH_LINE_CURRENT") == null ? "" : df1.format((Double.parseDouble(rs.getString("RPH_LINE_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("YPH_LINE_CURRENT") == null ? "" : df1.format((Double.parseDouble(rs.getString("YPH_LINE_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("BPH_LINE_CURRENT") == null ? "" : df1.format((Double.parseDouble(rs.getString("BPH_LINE_CURRENT"))) * cmf)%></td>
+            <%-- <td ><%=rs.getString("RPH_ACTIVE_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("RPH_ACTIVE_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("YPH_ACTIVE_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("YPH_ACTIVE_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("BPH_ACTIVE_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("BPH_ACTIVE_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("RPH_REACT_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("RPH_REACT_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("YPH_REACT_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("YPH_REACT_CURRENT"))) * cmf)%></td>
+            <td ><%=rs.getString("BPH_REACT_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("BPH_REACT_CURRENT"))) * cmf)%></td>--%>
+            <td ><%=rs.getString("RPH_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("RPH_POWER_FACTOR"))))%></td>
+            <td ><%=rs.getString("YPH_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("YPH_POWER_FACTOR"))))%></td>
+            <td ><%=rs.getString("BPH_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("BPH_POWER_FACTOR"))))%></td>
+            <td ><%=rs.getString("AVG_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("AVG_POWER_FACTOR"))))%></td>
+            <td ><%=rs.getString("FUND_ACT_POWER") == null ? "" : df1.format((Double.parseDouble(rs.getString("FUND_ACT_POWER"))) * pmf)%></td>
+            <td ><%=rs.getString("APPARENT_POWER") == null ? "" : df1.format((Double.parseDouble(rs.getString("APPARENT_POWER"))) * pmf)%></td>
+            <td ><%=rs.getString("REACT_POWER") == null ? "" : df1.format((Double.parseDouble(rs.getString("REACT_POWER"))) * pmf)%></td>
+            <td ><%=rs.getString("FREQUENCY") == null ? "" : df1.format((Double.parseDouble(rs.getString("FREQUENCY"))))%></td>           
+            <%--<td  ><%=locdata.split(",")[kwh].equals("") ? "" : df1.format((Double.parseDouble(locdata.split(",")[0])))%></td>
+            <td  ><%=locdata.split(",")[kvah].equals("") ? "" : df1.format((Double.parseDouble(locdata.split(",")[1])))%></td>--%>
+        </tr>
+        <%
+                    }
+                }//while
+            }
+            out.println(stringToReturn);
+        %>
+        <!--<tr><td colspan="21" align="right"><img src="images/red.jpg" width="12" height="12"></img>Delayed Data, NA: Not Applicable</td></tr>-->
+    </tbody> </table>
+
+
+
+<%
+}// end of complete data
+else {          // latest data block
+    double ctr, ptr, Actr, Aptr;
+    double vmf = 1.0, cmf = 1.0;
+    pstmt2 = con.prepareStatement("select * from meter where meterid=" + meter_id);
+    rs2 = pstmt2.executeQuery();
+    if (rs2.next()) {
+        ctr = Double.parseDouble(rs2.getString("METER_CTR") == null ? "1.0" : rs2.getString("METER_CTR"));
+        ptr = Double.parseDouble(rs2.getString("METER_PTR") == null ? "1.0" : rs2.getString("METER_PTR"));
+        //Actr = Double.parseDouble(rs2.getString("ADOPTED_CTR") == null ? "1.0" : rs2.getString("ADOPTED_CTR"));
+        if (rs2.getString("ADOPTED_CTR") == null) {
+            Actr = Double.valueOf("1.0");
+        } else {
+            String ACTR = rs2.getString("ADOPTED_CTR");
+            if (ACTR.contains("/")) {
+                String numerator = ACTR.substring(0, ACTR.indexOf("/"));
+                String denominator = ACTR.substring(ACTR.indexOf("/") + 1);
+                Actr = Double.valueOf(numerator) / Double.valueOf(denominator);
+            } else {
+                Actr = Double.parseDouble(rs2.getString("ADOPTED_CTR"));
+            }
+        }
+        Aptr = Double.parseDouble(rs2.getString("ADOPTED_PTR") == null ? "1.0" : rs2.getString("ADOPTED_PTR"));
+        // cmf = (Actr / Aptr) * (ctr / ptr);
+        vmf = Double.parseDouble(df1.format(Aptr / ptr));
+        cmf = Double.parseDouble(df1.format(Actr / ctr));
+        pmf = Double.parseDouble(rs2.getString("mf"));
+        /*System.out.println("ctr:" + ctr);
+        System.out.println("ptr:" + ptr);
+        System.out.println("Actr:" + Actr);
+        System.out.println("Aptr:" + Aptr);*/
+        System.out.println("vmf:" + vmf);
+        System.out.println("cmf:" + cmf);
+        System.out.println("pmf:" + pmf);
+    }
+    if (aemf == 0) {
+        vmf = 1;
+        cmf = 1;
+        pmf = 1;
+    }
+    String sql = "";
+    if (DBUtil.getTargetDB().equals("oracle")) {
+        //sql = "select * from d2 where meterid=" + meter_id + " order by to_timestamp(g2,'DD-MM-YYYY HH24:MI:SS') desc";
+        /*sql = "SELECT "
+                + "(extract(DAY FROM log_time_stamp - meter_time_stamp)*24*60*60),"
+                + "(extract(HOUR FROM log_time_stamp - meter_time_stamp)*60*60),"
+                + "(extract(MINUTE FROM log_time_stamp - meter_time_stamp)*60),"
+                + "extract(SECOND FROM log_time_stamp - meter_time_stamp) timediff,cdfid,g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current,yph_line_current,bph_line_current,rph_power_factor,yph_power_factor,bph_power_factor,avg_power_factor,FUND_ACT_POWER,APPARENT_POWER,REACT_POWER,FREQUENCY,RPH_ACTIVE_CURRENT,YPH_ACTIVE_CURRENT,BPH_ACTIVE_CURRENT,RPH_REACT_CURRENT,BPH_REACT_CURRENT,YPH_REACT_CURRENT from "
+                + "(select cdfid,g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current,yph_line_current,bph_line_current,rph_power_factor,yph_power_factor,bph_power_factor,avg_power_factor,FUND_ACT_POWER,APPARENT_POWER,REACT_POWER,FREQUENCY,RPH_ACTIVE_CURRENT,YPH_ACTIVE_CURRENT,BPH_ACTIVE_CURRENT,RPH_REACT_CURRENT,BPH_REACT_CURRENT,YPH_REACT_CURRENT,meter_time_stamp,log_time_stamp from "
+                + "(select cdfid,g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current,yph_line_current,bph_line_current,rph_power_factor,yph_power_factor,bph_power_factor,avg_power_factor,FUND_ACT_POWER,APPARENT_POWER,REACT_POWER,FREQUENCY,RPH_ACTIVE_CURRENT,YPH_ACTIVE_CURRENT,BPH_ACTIVE_CURRENT,RPH_REACT_CURRENT,BPH_REACT_CURRENT,YPH_REACT_CURRENT,meter_time_stamp,log_time_stamp,meterid,rownum r from "
+                + "(select cdfid,g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current,yph_line_current,bph_line_current,rph_power_factor,yph_power_factor,bph_power_factor,avg_power_factor,FUND_ACT_POWER,APPARENT_POWER,REACT_POWER,FREQUENCY,RPH_ACTIVE_CURRENT,YPH_ACTIVE_CURRENT,BPH_ACTIVE_CURRENT,RPH_REACT_CURRENT,BPH_REACT_CURRENT,YPH_REACT_CURRENT,meterid,meter_time_stamp,log_time_stamp from d2 order by to_timestamp(g3,'dd-mm-yyyy hh24:mi:ss') desc) where regexp_like(trim(rph_voltage), '^[0-9]') and rownum<11  and meterid=" + meter_id + ") where r>=0)";*/
+				//sql = "select * from d2 where meterid='"+ meter_id +"' and rownum<10 order by meter_time_stamp desc";
+				//meter_sl_no
+				sql = "select * from d2 where meter_serial_no='"+ meter_sl_no +"' and rownum<15 order by meter_time_stamp desc";
+			    System.out.println("NEW ROWNUM QIEYRY = "+sql);
+        pstmt = con.prepareStatement(sql);
+    } else if (DBUtil.getTargetDB().equals("mysql")) {
+        //pstmt = con.prepareStatement("select * from d2 where meterid=" + meter_id + " order by meter_time_stamp desc limit 10");
+        sql = "select TIMESTAMPDIFF(SECOND,str_to_date(g3,'%d-%m-%Y %H:%i:%s'),log_time_stamp) timediff,g3,rph_voltage,yph_voltage,bph_voltage,rph_line_current,yph_line_current,bph_line_current,rph_active_current,yph_active_current,bph_active_current,rph_react_current,yph_react_current,bph_react_current,rph_power_factor,yph_power_factor,bph_power_factor,avg_power_factor,fund_act_power,apparent_power,react_power,frequency from d2 where meterid=" + meter_id + " order by meter_time_stamp desc limit 10";
+        pstmt = con.prepareStatement(sql);
+    }//end else
+    System.out.println("SQL-------------------------->" + sql);
+    rs = pstmt.executeQuery();
+    String dataString = "";
+    boolean status = false;
+    while (rs.next()) {
+        String locdata = "";
+        if (true) {
+            status = false;
+            Long delayTimeInSeconds = Long.parseLong(rs.getString(1));
+            if (delayTimeInSeconds > 60) {
+                delayTimeInSeconds = delayTimeInSeconds / 60;
+            }
+%> 
+<%
+    if (delayTimeInSeconds > 60 && locationName.toLowerCase().equals("feeder")) {
+%>
+<tr  align="center">
+    <%    } else {
+    %>
+<tr  align="center">
+    <%        }
+    %>
+    <%--  <td ><%=meter_sl_no%></td> --%>
+    <td ><%=rs.getString("g3") == null ? "" : rs.getString("g3")%></td>
+    <!--<td ><%=rs.getString("g3") == null ? "" : rs.getString("g3").substring(10)%></td>-->
+    <td ><%=rs.getString("rph_voltage") == null ? "" : df1.format((Double.parseDouble(rs.getString("rph_voltage"))) * vmf)%></td>
+    <td ><%=rs.getString("yph_voltage") == null ? "" : df1.format((Double.parseDouble(rs.getString("yph_voltage"))) * vmf)%></td>
+    <td ><%=rs.getString("bph_voltage") == null ? "" : df1.format((Double.parseDouble(rs.getString("bph_voltage"))) * vmf)%></td>
+    <td ><%=rs.getString("RPH_LINE_CURRENT") == null ? "" : df1.format((Double.parseDouble(rs.getString("RPH_LINE_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("YPH_LINE_CURRENT") == null ? "" : df1.format((Double.parseDouble(rs.getString("YPH_LINE_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("BPH_LINE_CURRENT") == null ? "" : df1.format((Double.parseDouble(rs.getString("BPH_LINE_CURRENT"))) * cmf)%></td>
+<!--            <td ><%=rs.getString("RPH_ACTIVE_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("RPH_ACTIVE_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("YPH_ACTIVE_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("YPH_ACTIVE_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("BPH_ACTIVE_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("BPH_ACTIVE_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("RPH_REACT_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("RPH_REACT_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("YPH_REACT_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("YPH_REACT_CURRENT"))) * cmf)%></td>
+    <td ><%=rs.getString("BPH_REACT_CURRENT") == null ? "NA" : df1.format((Double.parseDouble(rs.getString("BPH_REACT_CURRENT"))) * cmf)%></td>-->
+    <td ><%=rs.getString("RPH_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("RPH_POWER_FACTOR"))))%></td>
+    <td ><%=rs.getString("YPH_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("YPH_POWER_FACTOR"))))%></td>
+    <td ><%=rs.getString("BPH_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("BPH_POWER_FACTOR"))))%></td>
+    <td  ><%=rs.getString("AVG_POWER_FACTOR") == null ? "" : df1.format((Double.parseDouble(rs.getString("AVG_POWER_FACTOR"))))%></td>
+    <td  ><%=rs.getString("FUND_ACT_POWER") == null ? "" : df1.format((Double.parseDouble(rs.getString("FUND_ACT_POWER"))) * pmf)%></td>
+    <td ><%=rs.getString("APPARENT_POWER") == null ? "" : df1.format((Double.parseDouble(rs.getString("APPARENT_POWER"))) * pmf)%></td>
+    <td  ><%=rs.getString("REACT_POWER") == null ? "" : df1.format((Double.parseDouble(rs.getString("REACT_POWER"))) * pmf)%></td>
+    <td  ><%=rs.getString("FREQUENCY") == null ? "" : df1.format((Double.parseDouble(rs.getString("FREQUENCY"))))%></td>
+    <%--<td  ><%=locdata.split(",")[kwh].equals("") ? "" : df1.format((Double.parseDouble(locdata.split(",")[kwh])))%></td>
+    <td  ><%=locdata.split(",")[kvah].equals("") ? "" : df1.format((Double.parseDouble(locdata.split(",")[kvah])))%></td>--%>
+</tr>
+<%
+        }//Status
+    }//while
+%>
+</tbody></table>
+<table><tr><td colspan="5" align="right"><img src="images/red.jpg" width="12" height="12"></img> Delayed Data, NA: Not Applicable</td></tr></table>    
+            <%
+                        stringToReturn = stringToReturn;
+                        out.println(stringToReturn);
+                    }
+                } catch (Exception e) {
+                    out.println("Plz Try Again....");
+                    e.printStackTrace();
+                } finally {
+                    con.close();
+                }
+            %>

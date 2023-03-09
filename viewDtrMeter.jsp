@@ -1,0 +1,52 @@
+<%@ page session="false" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.*"%>
+<style>
+   
+</style>
+
+<table  cellpadding="0" cellspacing="0"  id="dtable" bgcolor="#EDF5FA" >
+    <thead>
+        <tr>            
+            <td>Sl No</td>
+			<td >Town</td>
+            <td >Substation</td>
+            <td >Feeder</td>
+            <td >DtrName</td>
+            <td >Mapped Meter</td>
+        </tr>
+    </thead>
+    <tbody>
+        <%
+            Connection con = null;
+            Statement st = null;
+            String sql = null;
+            sql = "select t.townname,ss.substationname,f.feedername,dt.dtrname,m.meter_serial_no from dtr dt,discom d,zone z,circle c,division di,subdivision subdiv,town t,substation ss,meter m,feeder f where  d.discom_id=z.discom_id and z.zoneid=c.zoneid and c.circleid=t.circleid and t.townid=di.townid and di.divisionid=subdiv.divisionid and subdiv.subdivid=ss.subdivid and ss.substationid=f.substationid and dt.feederid=f.feederid and dt.dtrid=m.dtrid order by t.townname,ss.substationname,f.feedername,dt.dtrname";
+
+            con = new DBUtil().getConnection();
+            st = con.createStatement();
+            ResultSet rs = st.executeQuery(sql);
+            try {
+				int sno=1;
+                while (rs.next()) {
+        %>
+        <tr>
+            <td  align="left"><%=sno%></td>
+			<td  align="left"><%=rs.getString(1)%></td>
+            <td  align="left"><%=rs.getString(2)%></td>
+            <td  align="left"><%=rs.getString(3)%></td>
+            <td  align="left"><%=rs.getString(4)%></td>
+            <td  align="left"><%=rs.getString(5)%></td>
+            
+        </tr>
+        <% sno++;
+                }
+            } catch (Exception e) {
+                e.getMessage();
+            }
+        %>
+    </tbody></table>
+
+
+

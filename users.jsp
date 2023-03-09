@@ -1,0 +1,382 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" height="100%">
+    <%@ page contentType="text/html; charset=iso-8859-1" language="java" import="java.sql.*" errorPage="" %>
+    <%@ taglib uri="/WEB-INF/struts-logic.tld" prefix="logic" %>
+    <%@ taglib uri="/WEB-INF/struts-html.tld" prefix="html" %>
+    <%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
+    <head>
+        
+        <%@ include file="importpage.jsp"%>
+		<script type="text/javascript" src="js/jquery-1.9.1.js"></script>
+<link rel="stylesheet" type="text/css" href="js2/datatables/datatables.min.css" />
+<script type="text/javascript" src="js2/datatables/datatables.min.js"></script>
+<link rel="stylesheet" type="text/css" href="css/table.css" />
+        <style>
+            .tab-box {
+                border-bottom: 1px solid #DDD;
+                padding-bottom:5px;
+            }
+            .tab-box a {
+                border:1px solid #DDD;
+                color:#666666;
+                padding: 5px 15px;
+                text-decoration:none;
+                background-color: #eee;
+                font-size:12px;
+            }
+            .tab-box a.activeLink {
+                background-color: #fff;
+                border-bottom: 0;
+                padding: 6px 15px;
+            }
+            .tabcontent { border: 1px solid #ddd; border-top: 0;}
+            .hide { display: none;}
+
+
+        </style>
+        <script type="text/javascript">
+            $(document).ready(function() {
+                $(".tabLink").each(function(){
+                    $(this).click(function(){
+                        tabeId = $(this).attr('id');
+                        $(".tabLink").removeClass("activeLink");
+                        $(this).addClass("activeLink");
+                        $(".tabcontent").addClass("hide");
+                        $("#"+tabeId+"-1").removeClass("hide")
+                     if(tabeId=="cont-1")
+                       addUser();
+                    if(tabeId=="cont-2")
+                       editUser();
+                    if(tabeId=="cont-3")
+                       delUser();
+                   if(tabeId=="cont-4")
+                       viewUser();      
+                        return false;
+                    });
+                });
+            });
+
+        </script>
+
+        <script type="text/javascript">
+            function GetXmlHttpObject()
+            {
+                var xmlHttp=null;
+                try
+                {
+                    // Firefox, Opera 8.0+, Safari
+                    xmlHttp=new XMLHttpRequest();
+                }
+                catch (e)
+                {
+                    //Internet Explorer
+                    try
+                    {
+                        xmlHttp=new ActiveXObject("Msxml2.XMLHTTP");
+                    }
+                    catch (e)
+                    {
+                        xmlHttp=new ActiveXObject("Microsoft.XMLHTTP");
+                    }
+                }
+                return xmlHttp;
+            }//GetXmlHttpObject
+        </script>
+      
+        <script type="text/javascript">
+            function getRelativeIds(value){ //function to get relative hierarchy ids
+               xmlHttp=GetXmlHttpObject();
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="getRelativeIds.jsp?officeType="+escape(value);   
+                //alert(url);
+                 xmlHttp.onreadystatechange=getRelativeIdsAction;
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null); 
+            }
+            function getRelativeIdsAction(){
+                if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+                {
+                    var showdata = xmlHttp.responseText;
+                    var strar = showdata.split(":");
+                    if(strar.length==1)
+                    { }
+                    else if(strar.length>1)
+                    {
+                        for(var j=document.getElementById("officeTypeId").options.length-1;j>=0;j--)
+                        {
+                            document.getElementById("officeTypeId").remove(j);
+                        }
+                        var combo = document.getElementById("officeTypeId");
+			for(var i=0;i<strar.length;i++)
+			{
+                            var option = document.createElement("option");
+                            option.text = strar[i].substring(strar[i].indexOf("_")+1);//textb.value;
+                            option.value = strar[i].substring(0, strar[i].indexOf("_"));//textb.value;
+                            try {
+                                combo.add(option, null); //Standard
+                            }catch(error) {
+                                combo.add(option); // IE only
+                            }//try
+			}//for
+                        document.getElementById("officeTypeId").value = officeTypeId;
+                    }
+                }//end if 
+            }
+             function addUser()
+            {
+                    xmlHttp=GetXmlHttpObject();
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="addUser.jsp";
+                 xmlHttp.onreadystatechange=displaycommonAction;
+
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+            }
+             function delUser()
+            {
+                    xmlHttp=GetXmlHttpObject();
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="deleteUser.jsp";
+                 xmlHttp.onreadystatechange=displaycommonAction;
+
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+            }
+             function viewUser()
+            {
+                 xmlHttp=GetXmlHttpObject();
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="viewUser.jsp";
+                 xmlHttp.onreadystatechange=displaycommonAction;
+
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+            }
+            function editUser()
+            {
+                    xmlHttp=GetXmlHttpObject();
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="updateUser.jsp";
+                 xmlHttp.onreadystatechange=displaycommonAction;
+
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+            }
+            function addUsers(){
+                userId=document.getElementById("userId").value;
+                password=document.getElementById("password").value;
+               var uType=document.getElementById('userTypeAdd').selectedIndex;
+               var userType=document.getElementById('userTypeAdd').options[uType].value;
+               
+                //userType=43;
+                isActive=document.getElementById("isActive").value;
+                firstName=document.getElementById("firstName").value;
+                lastName=document.getElementById("lastName").value;
+                officeType=document.getElementById("officeType").value;
+                officeTypeId=document.getElementById("officeTypeId").value;
+                if("0"==officeTypeId){
+                  officeType = "all";
+                }
+                
+                xmlHttp=GetXmlHttpObject();
+                
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="meter_management_actions/addUserAction.jsp?userId="+escape(userId)+"&password="+escape(password)
+                    +"&userType="+escape(userType)+"&isActive="+escape(isActive)+"&firstName="+escape(firstName)
+                    +"&lastName="+escape(lastName)+"&officeType="+escape(officeType)
+                    +"&officeTypeId="+escape(officeTypeId);
+               // alert(url);
+                xmlHttp.onreadystatechange=commonUserAction;
+
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+
+            }//end method
+            function delUsers()
+            {
+                
+                 xmlHttp=GetXmlHttpObject();                
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                
+              var  userSel=document.getElementById('deluserId').selectedIndex;              
+              var  userId= document.getElementById('deluserId').options[userSel].text;
+                var url="meter_management_actions/deleteUserAction.jsp?userId="+escape(userId);
+                
+                xmlHttp.onreadystatechange=commonUserAction;
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+                
+            }
+            function updateUsers()
+            {
+                 xmlHttp=GetXmlHttpObject();                
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                  var userId=document.getElementById("userId").value;
+                  var oldpwd=document.getElementById("oldpassword").value;
+                  var newpwd=document.getElementById("newpassword").value;
+                  var userType=document.getElementById("userType").value;
+                  var isActive=document.getElementById("isActive").value;
+                  var firstName=document.getElementById("firstName").value;
+                  var lastName=document.getElementById("lastName").value;
+                  var officeType=document.getElementById("officeType").value;
+                  var officeTypeId=document.getElementById("officeTypeId").value;
+                  if("0"==officeTypeId){
+                    officeType = "all";
+                  }
+             
+                var url="meter_management_actions/updateUserAction.jsp?userId="+escape(userId)+"&oldpwd="+escape(oldpwd)+"&newpwd="+escape(newpwd)+"&userType="+escape(userType)+"&isActive="+escape(isActive)+"&firstName="+escape(firstName)+"&lastName="+escape(lastName)+"";
+                    url=url+"&officeType="+escape(officeType)+"&officeTypeId="+escape(officeTypeId)+"";
+                
+                xmlHttp.onreadystatechange=commonUserAction;
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+                
+            }
+            function commonUserAction(){
+                if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+                {
+                    document.getElementById("updateDataPart").style.display="block";
+                    document.getElementById("updateDataPart").innerHTML=xmlHttp.responseText;
+                }//end if
+            }//end method
+            function displaycommonAction()
+            {
+				document.getElementById("DataPart").innerHTML=document.getElementById("loading").innerHTML;
+                if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+                {
+                    document.getElementById("updateDataPart").innerHTML="";
+                    document.getElementById("DataPart").innerHTML=xmlHttp.responseText;
+					$('#dtable').DataTable();
+                }//end if
+            }
+            function getUserDetails(userId)
+            {
+                 xmlHttp=GetXmlHttpObject();
+                if (xmlHttp==null)
+                {
+                    alert ("Browser does not support HTTP Request");
+                    return;
+                }
+                var url="getUserDetails.jsp?userId="+escape(userId);   
+                
+                 xmlHttp.onreadystatechange=getUserDetailsAction;
+                xmlHttp.open("GET",url,true);
+                xmlHttp.send(null);
+            }
+            function getUserDetailsAction()
+            {
+                 if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+                {
+                    var result=xmlHttp.responseText;
+                  
+                    document.getElementById("userType").value=result.split(",")[1];
+                    document.getElementById("isActive").value=result.split(",")[2];
+                    document.getElementById("firstName").value=result.split(",")[3];
+                    document.getElementById("lastName").value=result.split(",")[4];
+                    document.getElementById("officeType").value=result.split(",")[5];                    
+                    getRelativeIds(result.split(",")[5]);
+                    officeTypeId = result.split(",")[6].trim();
+                    document.getElementById("officeTypeId").value=result.split(",")[6].trim();
+                    
+                }//end if
+                
+            }
+        </script>
+    </head>
+    <body onload="viewUser();">
+        <div id="navigation"></div>
+
+        <table width=100% border=0 cellpadding=0 cellspacing=0 style="background:url(images/body.png) repeat-x;">
+            <%@ include file="top.jsp"%>
+            <tr>
+                <td width=220px valign="top" style="padding-left:5px;padding-top:5px;background:url(images/side.jpg) repeat-x;background-color:#EDF5FA;" align="center">
+                    <table border="0" cellpadding=0 cellspacing=0 style="font-family:Verdana,Arial,Helvetica,sans-serif;font-size:12px;">
+                        <tr>
+                            <td width="200px" style="border-bottom:1px solid rgb(204, 204, 204);border-top:1px solid rgb(204, 204, 204);" align="center">
+
+                                <b>User Management</b>
+                            </td>
+                        </tr>
+
+                    </table>
+                    <br/>
+                    <%@ include file="userManage_links.jsp"%>
+
+
+
+
+                </td>
+                <td width=14px style="background:url(images/bg-content-left.png) no-repeat;width:14px;background-color:#EDF5FA;"></td>
+                <td width=83% style="background:url(images/bg-content-center.png) repeat-x;padding-left:10px;padding-right:10px;padding-bottom:10px;padding-top:10px;" valign="top">
+
+                    <%@ include file="menu1.jsp"%>
+                    <br/>
+
+
+                    <div class="tab-box" >
+                        <%
+                           if(session.getAttribute("user_type").equals("Administrator"))
+                           {
+                        %>
+                        <a href="javascript:;" class="tabLink " id="cont-1">Add</a>
+                        <a href="javascript:;" class="tabLink " id="cont-2">Modify</a>
+                        <a href="javascript:;" class="tabLink " id="cont-3">Delete</a>
+                        <% }else{} %>
+                        <a href="javascript:;" class="tabLink activeLink " id="cont-4">View</a>
+
+                    </div>
+                    <div id="updateDataPart" align="center"> </div>
+                      <div id="DataPart" align="center" class="table-responsive"> </div>
+                    <div class="tabcontent paddingAll" id="cont-1-1"> </div>
+                    <div class="tabcontent paddingAll hide" id="cont-2-1"></div>
+                    <div class="tabcontent paddingAll hide" id="cont-3-1"></div>
+                    <div class="tabcontent paddingAll hide" id="cont-4-1"> </div>
+
+                </td>
+                <td width=13px style="background:url(images/bg-content-right.png) no-repeat;width:13px;background-color:#EDF5FA;"></td>
+            </tr>
+
+
+        </table>
+        <div id="navigation" ></div>
+        <%@ include file="bottom.jsp"%>
+
+    </body>
+	 <div id="loading" style="display: none">
+    <table width="100%"><tr><td align="center">
+    <img src="./images/loading.jpg"/>
+            </td></tr></table>
+</div>
+</html>

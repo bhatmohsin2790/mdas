@@ -1,0 +1,93 @@
+<%@ page session="false" %>
+<%@page import="java.sql.ResultSet"%>
+<%@page import="java.sql.*" %>
+<%@page import="java.sql.Connection"%>
+<%@page import="in.amitech.db.DBUtil"%>
+<%! PreparedStatement pstmt = null;
+    Connection con = null;
+    ResultSet rs = null;
+
+%>
+<form action=""  name="meter">
+
+
+    <table align="center" bgcolor="#E0ECF8" cellpadding="5" cellspacing="5">
+
+        <tr><th colspan="4"><h2><u> CHANGE METER INFO</u></h2></th></tr>
+        <tr>
+            <td>
+                Meter Sl No:</td>
+            <td><select name="meterno" id="meterno" onchange="getmeterdetails(this.value)">
+                    <option value="-1">select meter no</option>
+                    <%
+                                   Connection con1 = null;
+                                    Statement st = null;
+                                    String sql = null;
+                                    sql = "select * from meter order by meter_serial_no";
+                                    con1 = new DBUtil().getConnection();
+                                    st = con1.createStatement();
+                                    ResultSet rs = st.executeQuery(sql);
+                                    while (rs.next()) {
+                    %>
+                     <option value="<%=rs.getString("meterid") %>"><%= rs.getString("meter_serial_no")%> </option>
+               
+            <% } %>
+             </select></td>
+            <td></td>
+
+            <td></td>
+        </tr>
+
+        <tr><td>
+                SDO:</td><td>
+                <input name="sdo" id="sdo" type="text" ></td>
+            <td>
+                Town:</td><td>
+                <input name="town" id="town" type="text"></td></tr>
+        <tr><td>
+                Feeder Code:</td><td>
+                <input name="feedercode" id="feedercode" type="text" ></td>
+            <td>
+                CCBFeeder Name:</td><td>
+                <input name="ccbfeedername" id="ccbfeedername" type="text" ></td></tr>
+
+        <tr><td>
+                MDASFeeder Name:</td><td>
+                <input name="mdasfeedername" id="mdasfeedername" type="text" ></td>
+            <td>
+                Consumer Count:</td><td>
+                <input name="consumercount" id="consumercount" type="text" ></td></tr>
+        <tr><td>
+                Replaced Meter:</td><td>
+                <input name="replacedmeter" id="replacedmeter" type="text"></td>  
+            <td>Remarks:</td><td>
+                <input name="remarks" id="remarks" type="text"></td>
+            </td>
+                
+            </tr>
+   
+
+        <tr><td></td><td></td><td>
+
+                <input type="button" value="Update" onclick="changeMeterInfo()"></td></tr>
+
+    </table>
+
+
+</form>
+
+
+<%
+            if (rs != null) {
+                rs.close();
+            }
+            if (pstmt != null) {
+                pstmt.close();
+            }
+            if (con != null) {
+                con.close();
+            }
+
+
+%>
+

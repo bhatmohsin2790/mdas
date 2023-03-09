@@ -1,0 +1,63 @@
+<%@ page session="false" %>
+<%@page import="java.sql.*" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.Connection"%>
+<%@page import="java.util.Date"%>
+<%@page import="java.sql.Timestamp"%>
+<%
+    try
+    {
+        String sql="",result="";
+        String meterno = request.getParameter("meterno").trim();
+       String cc = request.getParameter("cc").trim();
+        String replacedmeter= request.getParameter("replacedmeter").trim();
+        
+        Connection con = null,ccb_con=null;
+        PreparedStatement pstmt = null;
+        con = new DBUtil().getConnection();
+        Date date = new Date();
+        long time = date.getTime();
+        Timestamp ts = new Timestamp(time);
+        try{
+        ccb_con=DriverManager.getConnection("jdbc:oracle:thin:@172.18.3.52:1625:CCBPROD", "cisadm", "cisadm");
+        }catch(Exception e){}
+            
+     //--------updating MDAS_Prod database   
+        sql="update meter set consumerid=null where meter_serial_no='"+meterno+"'";
+         pstmt=con.prepareStatement(sql);
+         if(pstmt.executeUpdate()>0){
+        sql="insert into meter(meter_serial_no,consumerid) values(?,?)"; 
+        pstmt=con.prepareStatement(sql);
+        pstmt.setString(1, replacedmeter);
+        pstmt.setString(2, cc);
+        pstmt.executeUpdate();
+         }
+     
+        result="Updated in MDAS DB";
+     //--------updating CCB database
+         sql="insert into xx_intg_queue(INTG_ID,SOURCE,TARGET,CC,METER_SERIAL_NO) values(?,?,?,?,?)";
+         if(ccb_con!=null){
+            pstmt=ccb_con.prepareStatement(sql);
+            pstmt.setString(1, "XXJKPDD_MTRHTC");
+            pstmt.setString(2, "MDAS");
+            pstmt.setString(3, "CCB");
+            pstmt.setString(4, cc);
+            pstmt.setString(5, replacedmeter);
+            
+            if(pstmt.executeUpdate()>0)
+                result=result+"Updated in CCB DB";
+            else
+                result=result+"Error in updating in CCB";
+         }else{
+             System.out.println("CCB connection not available ");
+         }
+        
+    }
+    catch(Exception e)
+    {
+        e.printStackTrace();
+    }
+    
+%>
+    

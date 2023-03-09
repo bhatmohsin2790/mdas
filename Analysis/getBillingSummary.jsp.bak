@@ -1,0 +1,245 @@
+<%@page import="sun.print.PSPrinterJob"%>
+<%@page import="java.util.*"%>
+<%@page import="ActionBeans.AnalysisAction"%>
+<%@page import="ActionBeans.PowerOnOff10hr"%>
+<%@page import="FormBeans.BillingBean"%>
+<%@page import="java.util.concurrent.TimeUnit"%>
+<%@ page import="java.sql.*" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<style>
+    .thstyle{
+        background-color: #8FA1B5; 
+        color:#FFFFFF;
+        font-size:14px;
+        border-left:1px solid #FFFFFF;
+        text-decoration:none;
+        font-family: monospace;
+        border-bottom: 1px solid #FFFFFF;
+
+    }
+    .trbg{
+        background-color: #E8EBE2;
+        border-bottom: 1px solid #FFFFFF;
+    }
+    .tdbg{
+        border-bottom: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+    }
+    #district_11kv_load tr  td {
+        background-color: #E8EBE2;
+        border-bottom: 1px solid #FFFFFF;
+        border-left: 1px solid #FFFFFF;
+    }
+</style> 
+<%
+    
+    ResultSet rs = null;
+    Connection con = null;
+    Statement stmt=null;
+    String sql = "",lastCommDatenTime="";
+    int slno = 1;
+    String reportDate=request.getParameter("reportDate");
+    //if(reportDate.length()>0)
+      reportDate=reportDate.replaceAll("/", "-");
+ String townId=request.getParameter("townId").trim();
+ String metersType = request.getParameter("metersType");
+ String category=request.getParameter("category");
+
+%>
+<table width="100%" class="stdtable stdtablecb smallfont" id="dtable">
+<thead>
+
+        <tr >
+            <th class="thstyle" >Sl No</th>
+            <th class="thstyle" >Town</th>
+            <th class="thstyle" >Substation</th>
+            <th class="thstyle" >Location Name</th>       
+            <th class="thstyle" >Meter Sl No</th>
+            <th class="thstyle">Billing Timestamp</th>
+                <th class="thstyle">KWH</th>
+                <th class="thstyle">KVAH</th>
+                <th class="thstyle">KVARH Lag</th>
+                <th class="thstyle">KVARH Lead</th>
+                <th class="thstyle">MD KW</th>
+                <th class="thstyle">MD KVA</th>
+                <th class="thstyle">KWH Tod-1</th>
+                <th class="thstyle">KWH Tod-2</th>
+                <th class="thstyle">KWH Tod-3</th>
+                <th class="thstyle">MD KW Tod-1</th>
+                <th class="thstyle">MD KW Tod-2</th>
+                <th class="thstyle">MD KW Tod-3</th>
+
+                <th class="thstyle">KVAH Tod-1</th>
+                <th class="thstyle">KVAH Tod-2</th>
+                <th class="thstyle">KVAH Tod-3</th>
+                <th class="thstyle">MD KVA Tod-1</th>
+                <th class="thstyle">MD KVA Tod-2</th>
+                <th class="thstyle">MD KVA Tod-3</th>
+     
+                <th class="thstyle">System PF</th>
+        </tr>        
+    </thead>
+    <tbody>
+        <%
+            try {
+                 HttpSession sess=request.getSession(false);
+                 String office_type=sess.getAttribute("office_type").toString();
+                 String office_type_id=sess.getAttribute("office_type_id").toString();
+                 
+                con = new DBUtil().getConnection();
+                 Map meters= new AnalysisAction().getMeters(townId,metersType,category,office_type,office_type_id);
+                 Map<String,BillingBean> billMap=new HashMap();
+                 System.out.println("total Meters--->"+meters.size());
+                 if(!meters.isEmpty()){
+                   //----------------------getting billing summary data from auto_reset_energies table based on month and year
+                    try{
+            String query = "select * from auto_reset_energies where billing_timestamp like '%"+reportDate+"%' order by meter_serial_no";
+           
+           
+            
+            stmt = con.createStatement();
+            rs = stmt.executeQuery(query);
+            while(rs.next()){
+                if(meters.containsKey(rs.getString("meter_serial_no"))){
+                    BillingBean bb = new BillingBean();
+                    bb.setMeterSrNo(rs.getString("meter_serial_no"));
+                
+                   
+                
+                bb.setBillingTimestamp(rs.getString("billing_timestamp"));
+                bb.setKWH(rs.getString("KWH"));
+                bb.setKVAH(rs.getString("KVAH"));
+                bb.setKvarh_Lag(rs.getString("KVARH_Lag"));
+                bb.setKvarh_Lead(rs.getString("KVARH_Lead"));
+                bb.setMDKw(rs.getString("MDKW"));
+                bb.setMDKwOccuredTimestamp(rs.getString("MDKWOCCDATE"));
+                bb.setMDKva(rs.getString("MDKVA"));
+                bb.setMDKvaOccuredTimestamp(rs.getString("MDKVAOCCDATE"));
+                bb.setKWH_TOD_1(rs.getString("KWH_TOD_1"));
+                bb.setKWH_TOD_2(rs.getString("KWH_TOD_2"));
+                bb.setKWH_TOD_3(rs.getString("KWH_TOD_3"));
+                bb.setKWH_TOD_4(rs.getString("KWH_TOD_4"));
+                bb.setKWH_TOD_5(rs.getString("KWH_TOD_5"));
+                bb.setKWH_TOD_6(rs.getString("KWH_TOD_6"));
+                bb.setKWH_TOD_7(rs.getString("KWH_TOD_7"));
+                bb.setKWH_TOD_8(rs.getString("KWH_TOD_8"));
+                bb.setKVAH_TOD_1(rs.getString("KVAH_TOD_1"));
+                bb.setKVAH_TOD_2(rs.getString("KVAH_TOD_2"));
+                bb.setKVAH_TOD_3(rs.getString("KVAH_TOD_3"));
+                bb.setKVAH_TOD_4(rs.getString("KVAH_TOD_4"));
+                bb.setKVAH_TOD_5(rs.getString("KVAH_TOD_5"));
+                bb.setKVAH_TOD_6(rs.getString("KVAH_TOD_6"));
+                bb.setKVAH_TOD_7(rs.getString("KVAH_TOD_7"));
+                bb.setKVAH_TOD_8(rs.getString("KVAH_TOD_8"));
+                bb.setMDKw_TOD_1(rs.getString("MDKW_TOD_1"));
+                bb.setMDKw_TOD_2(rs.getString("MDKW_TOD_2"));
+                bb.setMDKw_TOD_3(rs.getString("MDKW_TOD_3"));
+                bb.setMDKw_TOD_4(rs.getString("MDKW_TOD_4"));
+                bb.setMDKw_TOD_5(rs.getString("MDKW_TOD_5"));
+                bb.setMDKw_TOD_6(rs.getString("MDKW_TOD_6"));
+                bb.setMDKw_TOD_7(rs.getString("MDKW_TOD_7"));
+                bb.setMDKw_TOD_8(rs.getString("MDKW_TOD_8"));
+                bb.setMDKwOccuredTimestamp_TOD_1(rs.getString("MDKW_TOD_1_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_2(rs.getString("MDKW_TOD_2_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_3(rs.getString("MDKW_TOD_3_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_4(rs.getString("MDKW_TOD_4_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_5(rs.getString("MDKW_TOD_5_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_6(rs.getString("MDKW_TOD_6_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_7(rs.getString("MDKW_TOD_7_OCCDATE"));
+                bb.setMDKwOccuredTimestamp_TOD_8(rs.getString("MDKW_TOD_8_OCCDATE"));
+                bb.setMDKva_TOD_1(rs.getString("MDKVA_TOD_1"));
+                bb.setMDKva_TOD_2(rs.getString("MDKVA_TOD_2"));
+                bb.setMDKva_TOD_3(rs.getString("MDKVA_TOD_3"));
+                bb.setMDKva_TOD_4(rs.getString("MDKVA_TOD_4"));
+                bb.setMDKva_TOD_5(rs.getString("MDKVA_TOD_5"));
+                bb.setMDKva_TOD_6(rs.getString("MDKVA_TOD_6"));
+                bb.setMDKva_TOD_7(rs.getString("MDKVA_TOD_7"));
+                bb.setMDKva_TOD_8(rs.getString("MDKVA_TOD_8"));
+                bb.setMDKvaOccuredTimestamp_TOD_1(rs.getString("MDKVA_TOD_1_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_2(rs.getString("MDKVA_TOD_2_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_3(rs.getString("MDKVA_TOD_3_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_4(rs.getString("MDKVA_TOD_4_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_5(rs.getString("MDKVA_TOD_5_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_6(rs.getString("MDKVA_TOD_6_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_7(rs.getString("MDKVA_TOD_7_OCCDATE"));
+                bb.setMDKvaOccuredTimestamp_TOD_8(rs.getString("MDKVA_TOD_8_OCCDATE"));
+                bb.setSystemPF(rs.getString("PF"));
+                billMap.put(rs.getString("meter_serial_no"),bb);
+                }
+            }//while
+            System.out.println("Total Records in billMap = "+billMap.size());
+            con.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+//----------------------------------------------------------------------------------------------------------------------                   
+                 Iterator it=meters.entrySet().iterator();
+                 int sno=1;
+                 while(it.hasNext()){
+                     Map.Entry meter=(Map.Entry)it.next(); 
+		     
+
+                    %>
+                    <tr class="trbg">
+                        <td class="tdbg"><%=sno%></td>
+                        <td class="tdbg"><%=meter.getValue().toString().split(",")[1]%></td>
+                        <td class="tdbg"><%=meter.getValue().toString().split(",")[2]%></td>
+                        <td class="tdbg"><%=meter.getValue().toString().split(",")[0]%></td>
+                        <td class="tdbg"><%=meter.getKey()%></td>
+                        <%if(billMap.containsKey(meter.getKey())){
+                          BillingBean bb=billMap.get(meter.getKey())  ;
+                        %>
+                <td><%=bb.getBillingTimestamp()%></td>
+                <td><%=bb.getKWH()%></td>
+                <td><%=bb.getKVAH()%></td>
+                <td><%=bb.getKvarh_Lag()%></td>
+                <td><%=bb.getKvarh_Lead()%></td>
+                <td><%=bb.getMDKw()%></td>
+                <td><%=bb.getMDKva()%></td>
+                
+                <td><%=bb.getKWH_TOD_1()%></td>
+                <td><%=bb.getKWH_TOD_2()%></td>
+                <td><%=bb.getKWH_TOD_3()%></td>
+                <td><%=bb.getMDKw_TOD_1()%></td>
+                <td><%=bb.getMDKw_TOD_2()%></td>
+                <td><%=bb.getMDKw_TOD_3()%></td>
+
+
+                <td><%=bb.getKVAH_TOD_1()%></td>
+                <td><%=bb.getKVAH_TOD_2()%></td>
+                <td><%=bb.getKVAH_TOD_3()%></td>
+                <td><%=bb.getMDKva_TOD_1()%></td>
+                <td><%=bb.getMDKva_TOD_2()%></td>
+                <td><%=bb.getMDKva_TOD_3()%></td>                
+
+                <td><%=bb.getSystemPF()==null?"":bb.getSystemPF()%></td>  
+                <%}else{
+                     for(int i=0;i<=20;i++){
+                      %>
+                      <td></td>
+                <%
+                     }
+                 }%>
+                    </tr>
+                 <%
+			sno++;
+						
+                  
+				 } //if
+				 }//if meters map is not empty
+                                 else{
+                      out.println("<tr class='trbg'><td class='tdbg' colspan='6' align='center'>No meters available ...</td></tr>");
+                                 }
+            }//try
+            catch (Exception e) {
+                // out.println("<h4>Error:</h4>" + e.getMessage());
+                e.printStackTrace();
+            }
+
+        %>
+
+    </tbody>
+    
+</table>
+
+        

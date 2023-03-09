@@ -1,0 +1,231 @@
+<%@include file="report_header.jsp" %>
+<%@page import="java.text.DecimalFormat"%>
+<%!    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+%>
+<%@page import="java.lang.*" %>
+<%
+    
+        DecimalFormat tdec = new DecimalFormat("#0.00");
+        String meter_id = "";
+        String meter_sl_no = "";
+        if (request.getParameter("meter_sl_no") == null || request.getParameter("meter_sl_no") == "") {
+            meter_sl_no = (String) session.getAttribute("meter_sl_no");
+        } else {
+            meter_sl_no = request.getParameter("meter_sl_no");
+        }
+        if (request.getParameter("meter_id") == null || request.getParameter("meter_id") == "") {
+            meter_id = (String) session.getAttribute("meter_id");
+        } else {
+            meter_id = request.getParameter("meter_id");
+        }
+        session.setAttribute("meter_id", meter_id);
+        String stringToReturn = "";
+        String fromDate = request.getParameter("esdate").trim();
+        String toDate = request.getParameter("eedate").trim();
+        String sql = "";
+        int count = 0;
+        int start = 0;
+        int limit = 51;
+
+%>
+
+<%@ include file="getConnection.jsp"%>
+
+<table width="100%" border="0">
+    <tr bgcolor="#56a5ec">
+        <td colspan="6" align="center" class="head1">
+            ENERGY CONSUMPTION
+        </td>
+    </tr>
+</table>
+<table class="mtable">
+    <tr>
+        <td class="td1">
+            Billing Date1
+        </td>
+        <td class="td1">
+            Billing Date2
+        </td>
+        <%  if (meter_id.equals("48") || meter_id.equals("49") || meter_id.equals("51") || meter_id.equals("52") || meter_id.equals("53") || meter_id.equals("54") || meter_id.equals("55") || meter_id.equals("56") || meter_id.equals("57") || meter_id.equals("58")) {%>
+        <td class="td1">KWH</td>
+        <td class="td1">KVARH LAG</td>
+        <td class="td1">KVARH LEAD</td>
+        <td class="td1">KVAH</td>
+
+
+        <% } else {%>
+
+        <%
+            pstmt = con.prepareStatement("select billing_columns_header from d3_columns_header where meter_serial_no='" + meter_sl_no + "' and billing_type='b3'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                String data_string2[] = rs.getString(1).split(",");
+                for (int i = 0; i < data_string2.length; i++) {
+        %>
+        <td class="td1"><%= data_string2[i]%></td>
+        <%}
+                }
+            }
+        %>
+
+    </tr>
+
+
+    <%
+        session.setAttribute("meter_sl_no", meter_sl_no);
+        System.out.println("meterid---->" + meter_sl_no);
+        if (!fromDate.equals("") && !toDate.equals("")) {
+            if (DBUtil.getTargetDB().equals("oracle")) {
+                sql = "select count(*) from d3_b3 where meter_serial_no='" + meter_sl_no + "' and trunc(d3_time_stamp) >= to_date('" + fromDate + "','DD/MM/YYYY') and trunc(d3_time_stamp) <= to_date('" + toDate + "','DD/MM/YYYY')";
+            } else if (DBUtil.getTargetDB().equals("mysql")) {
+                sql = "select count(*) from d3_b3 where meter_serial_no='" + meter_sl_no + "' and str_to_date(date_format(d3_time_stamp,'%d/%m/%Y'),'%d/%m/%Y') >= str_to_date('" + fromDate + "','%d/%m/%Y') and str_to_date(date_format(d3_time_stamp,'%d/%m/%Y'),'%d/%m/%Y') <= str_to_date('" + toDate + "','%d/%m/%Y') ";
+            }
+        } else {
+            sql = "select count(*) from d3_b3 where meter_serial_no='" + meter_sl_no + "'";
+        }
+        pstmt = con.prepareStatement(sql);
+        rs = pstmt.executeQuery();
+        if (rs.next()) {
+            count = rs.getInt(1);
+        }//end if
+        System.out.println("Total No of records :" + count);
+        start = Integer.parseInt(request.getParameter("start"));
+        //if(start>1)
+        // start=start-1;
+        if (DBUtil.getTargetDB().equals("oracle")) {
+            if (!fromDate.equals("") && !toDate.equals("")) {
+                sql = "select billing_date,data_string from (select to_char(d3_time_stamp,'YYYY-MM-DD HH24:MI:SS')"
+                        + "billing_date,data_string,rownum rnum from d3_b3 b3 where meter_serial_no='" + meter_sl_no + "' and "
+                        + "trunc(d3_time_stamp) >= to_date('" + fromDate + "','DD/MM/YYYY')"
+                        + "and trunc(d3_time_stamp) <= to_date('" + toDate + "','DD/MM/YYYY')"
+                        + "and rownum <? order by d3_time_stamp desc) where rnum>=?";
+            } else {
+                sql = "select billing_date,data_string from (select to_char(d3_time_stamp,'YYYY-MM-DD HH24:MI:SS')"
+                        + "billing_date,data_string,rownum rnum from d3_b3 b3 where meter_serial_no='" + meter_sl_no + "' and rownum <? order by d3_time_stamp desc) where rnum>=?";
+            }
+            pstmt = con.prepareStatement(sql);
+            //pstmt.setString(1, meter_id);
+            pstmt.setInt(1, start + limit);
+            pstmt.setInt(2, start);
+            System.out.println("sql  " + sql);
+        } else if (DBUtil.getTargetDB().equals("mysql")) {
+            start = start - 1;
+            if (!fromDate.equals("") && !toDate.equals("")) {
+                sql = "select date_format(d3_time_stamp,'%d-%m-%Y %H:%i:%s') billing_date,data_string from d3_b3 where meter_serial_no='" + meter_sl_no + "' and "
+                        + "str_to_date(date_format(d3_time_stamp,'%d/%m/%Y'),'%d/%m/%Y')>=str_to_date('" + fromDate + "','%d/%m/%Y') and "
+                        + "str_to_date(date_format(d3_time_stamp,'%d/%m/%Y'),'%d/%m/%Y') <=str_to_date('" + toDate + "','%d/%m/%Y') order by d3_time_stamp desc limit ?,?";
+            } else {
+                sql = "select date_format(d3_time_stamp,'%d-%m-%Y %H:%i:%s') billing_date,data_string from d3_b3 where meter_serial_no='" + meter_sl_no + "' order by d3_time_stamp desc limit ?,?";
+            }
+            pstmt = con.prepareStatement(sql);
+            pstmt.setInt(1, start);
+            pstmt.setInt(2, limit);
+        }
+        rs = pstmt.executeQuery();
+        String dataString = "";
+        int rs_records = 0;
+        String[] data_string3 = {""};
+        String prve_billing_date = "";
+
+        while (rs.next()) {
+            if (rs_records == 0) {
+                data_string3 = rs.getString("data_string").split(",");
+                prve_billing_date = rs.getString("billing_date");
+            } else {
+                String data_string[] = rs.getString("data_string").split(",");
+                //System.out.println("Data string lenth"+data_string.length);
+    %>
+
+
+
+    <tr>
+
+        <td class="td2"><%=prve_billing_date%></td>
+        <td class="td2"><%=rs.getString("billing_date")%></td>
+        <%
+            try {
+                for (int i = 0; i <= data_string.length - 1; i++) {%>
+        <td class="td2"><%=tdec.format(Double.parseDouble(data_string3[i]) - Double.parseDouble(data_string[i]))%></td>
+        <% }
+            } catch (Exception e) {
+            }
+
+        %>
+    </tr>
+    <%
+            }
+            rs_records++;
+            data_string3 = rs.getString("data_string").split(",");
+            prve_billing_date = rs.getString("billing_date");
+        }
+    %>
+    <!-- code for pagination  -->
+</table>
+<table width="100%" border="0">
+    <tr>
+        <td width="100%" align="center">
+            <table>
+                <tr>
+                    <%
+                        // code for previous
+                        int start_tmp = start;
+
+                        // code for page numbers
+                        //  start = 1;
+
+                        if (((Integer.parseInt(request.getParameter("start")) - 1) / 10) + 1 > limit) {
+                    %>
+                    <td id="pageNo" style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:energy_consumption(<%=((start_tmp / (limit * 10)) * (limit * 10)) - (limit - 1)%>)" style="text-decoration:none;">Prev 10</a></td>
+                    <%
+                        }
+                        int page_no_start = (start_tmp / (limit * 10)) * (limit * 10) + 1;
+                        int page_no_end = ((start_tmp / (limit * 10)) * (limit * 10)) + (limit * 9);
+                        page_no_start = (page_no_start / limit) + 1;
+                        page_no_end = (page_no_end / limit) + 1;
+
+                        start = 1;
+                        if (page_no_end >= Math.ceil((double) count / (double) (limit - 1))) {
+                            page_no_end = (int) Math.ceil((double) count / (double) (limit - 1));
+                        }
+
+                        for (int i = 1; i < Math.ceil((double) count / (double) (limit - 1)); i++) {
+                            if (i >= page_no_start && i <= page_no_end) {
+                                if (i == ((Integer.parseInt(request.getParameter("start")) - 1) / limit) + 1) {
+                    %>
+
+                    <td id="pageNo" style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:energy_consumption(<%=start%>)" style="text-decoration:none;"><%=i%></a></td>
+
+                    <%
+                    } else {
+                    %>
+
+                    <td id="pageNo"><a href="#"  onclick="javascript:energy_consumption(<%=start%>)"><%=i%></a></td>
+
+                    <%
+                                }
+                            }
+                            start = start + (limit);
+                        }
+                        // code for next
+                        //if((((Integer.parseInt(request.getParameter("start"))-1)/10)+1)>=1)
+                        start = start_tmp;
+                        if (page_no_end >= Math.ceil((double) count / (double) (limit - 1))) {
+                        } else {
+                            //start = Integer.parseInt(request.getParameter("start")) + 100;
+
+                            start = (((start_tmp / (limit * 10)) * (limit * 10)) + ((limit) * 9)) + limit + 1;
+
+                    %>
+
+                    <td id="pageNo"  style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:energy_consumption(<%=start%>)" style="text-decoration:none;">Next 10</a></td>
+
+                    <%
+                        }
+
+                    %>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>

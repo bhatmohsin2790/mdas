@@ -1,0 +1,16 @@
+html, body {height:100%; margin: 0; padding: 0; }
+
+html>body {
+	font-size: 12px; 
+} /* Reset Base Font Size */
+
+body {
+	font-family: Verdana, helvetica, arial, sans-serif;
+	font-size:12px;
+	font-weight:bold;
+	color:#04463B;
+}
+
+
+#main1 { padding: 1em; }
+

@@ -1,0 +1,301 @@
+<%@ include file="report_header.jsp"%> 
+<%@page import="java.text.NumberFormat"%>
+<%@page import="java.text.DecimalFormat"%>
+<%!    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+    String[] data_string2 = new String[0];
+    int flag = 0;
+%>
+<%
+    try {
+        NumberFormat twoDecFormat = new DecimalFormat("#0.000");
+        String meter_id = "";
+        if (request.getParameter("meter_id") == null || request.getParameter("meter_id") == "") {
+            meter_id = (String) session.getAttribute("meter_id");
+        } else {
+            meter_id = request.getParameter("meter_id");
+        }
+        session.setAttribute("meter_id", meter_id);
+        String stringToReturn = "";
+%>
+
+<%@ include file="getConnection.jsp"%>
+<!--<table align="vright"  >
+    
+         <tr>
+             <td  align="center" class="head1">
+                 <input type="button" value="Export to excel" onclick='uploadToExcel("tampers")'/>
+             </td>
+         </tr>
+     </table> -->
+
+<table  width="100%" id="dtable">
+    <thead>
+<tr>
+        <td  width="160px">
+            Event Dates
+        </td>
+        <td >
+            Event Type
+        </td>
+        <td >
+            Event Status
+        </td>
+
+        <%
+            try {
+                
+                    pstmt = con.prepareStatement("select * from d5_columns_header where meter_serial_no=(select meter_serial_no from meter where meterid=" + meter_id + ")");
+                    rs = pstmt.executeQuery();
+                    if (rs.next()) {
+                        flag = 1;
+                        System.out.println("---------------------------Tamper Header Got Dynamically-----------------------------------");
+                        data_string2 = rs.getString("tamper_columns_header").split(",");
+                    } else {
+                        System.out.println("---------------------------Tamper Header Got Manually-----------------------------------");
+                        pstmt = con.prepareStatement("select metermakeid,no_of_params,param_names from metermake where metermakeid=(select metermake from meter where meterid=" + meter_id + ")");
+                        rs = pstmt.executeQuery();
+
+                        if (rs.next()) {
+                            flag = 1;
+                            data_string2 = rs.getString("param_names").split(",");
+                        }//end if
+                    }//end else
+               
+            } catch (Exception e) {
+                if (flag == 0) {
+                }
+
+            }
+            //System.out.println("Tamper header lenght is ----->"+data_string2.length);
+            for (int i = 0; i < data_string2.length; i++) {
+        %>
+        <td ><%=data_string2[i]%></td>
+        <%
+            }//end for
+
+
+        %>
+
+    </tr>
+</thead>
+<tbody>
+    <%
+        System.out.println("<--------------------------->");
+        
+        String sql = "";
+       
+        String sdate = request.getParameter("sdate");
+        String edate = request.getParameter("edate");
+        String chkvalue = request.getParameter("chkvalues");
+        int start = Integer.parseInt(request.getParameter("start"));
+        //start = start - 1;
+        String values[] = chkvalue.split(",");
+
+        System.out.println("checked values" + chkvalue);
+
+//if dates are not selected
+        if (sdate.equals("") && edate.equals("")) {
+           
+
+            String meter_sl_no = "";
+            pstmt = con.prepareStatement("select meter_serial_no from meter where meterid=" + meter_id);
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                meter_sl_no = rs.getString("meter_serial_no");
+            }
+            session.setAttribute("meter_sl_no", meter_sl_no);
+            System.out.println("events meterid---->" + meter_id);
+            if (DBUtil.getTargetDB().equals("oracle")) {
+                sql = "select event_date,event_type,event_status,data_string from "
+                        + "(select event_date,event_type,event_status,data_string,rownum r "
+                        + "from (select event_date,e.event_type,event_status,data_string "
+                        + "from d5_data d,events e where d.cdfid in (select cdfid from  meter_data_time_stamp where meterid=" + meter_id + ") "
+                        + "and d.event_type=e.event_code and d.event_type in (";
+                for (int i = 0; i < values.length; i++) {
+                    sql = sql + "'" + values[i] + "'" + ",";
+                }
+                sql = sql + "'0') "
+                        + "order by d5_time_stamp desc) where rownum<? ) where r>=?";
+
+                pstmt = con.prepareStatement(sql);
+               
+
+
+            } else if (DBUtil.getTargetDB().equals("mysql")) {
+
+                sql = "select event_date,e.event_type,event_status,data_string from "
+                        + " d5_data d,events e where d.cdfid in (select cdfid from  meter_data_time_stamp where meterid=" + meter_id + ")"
+                        + " and d.event_type=e.event_code and d.event_type in (";
+                for (int i = 0; i < values.length; i++) {
+                    sql = sql + "'" + values[i] + "'" + ",";
+                }
+                sql = sql + "'0')order by d5_time_stamp desc limit ?,?";
+                System.out.println("sql query is" + sql);
+                pstmt = con.prepareStatement(sql);
+               
+            }
+            rs = pstmt.executeQuery();
+            String dataString = "";
+            System.out.println("executed--------------->");
+            int flag = 0;
+            while (rs.next()) {
+
+                //System.out.println("dataSTring lenth  is--------->"+rs.getString(4));
+                // System.out.println("dataSTring lenth  is--------->"+rs.getString(4).length());
+                flag = 1;
+
+                //if (rs.getString(4).length() > 1) 
+                if ((rs.getString(4) != null) && (!rs.getString(4).isEmpty())) {
+
+                    String data_string[] = rs.getString(4).split(",");
+    %>
+    <tr>
+        <td ><%=rs.getString(1)%></td>
+        <td ><%=rs.getString(2)%></td>
+        <td ><%=(rs.getString(3).trim().contains("restored")) ? "Restored" : "Occured"%></td>
+        <% for (int i = 0; i <= data_string.length - 1; i++) {
+                if (meter_id.equals("48") || meter_id.equals("49") || meter_id.equals("51") || meter_id.equals("52") || meter_id.equals("53") || meter_id.equals("54") || meter_id.equals("55") || meter_id.equals("56") || meter_id.equals("57") || meter_id.equals("58")) {
+                    if (i == 9) {
+        %>
+        <td  ><%= twoDecFormat.format(Double.parseDouble(data_string[i]))%></td>
+        <%
+        } else {
+        %>
+        <td  ><%= twoDecFormat.format(Double.parseDouble(data_string[i]))%></td>
+        <% }//else
+        } else {
+        %>
+        <td  ><%= twoDecFormat.format(Double.parseDouble(data_string[i]))%></td>
+        <% }//else
+            }//for%>
+    </tr>
+    <%
+        }
+        if ((rs.getString(4) == null) || (rs.getString(4).isEmpty())) {
+
+    %>
+    <tr>
+        <td ><%=rs.getString(1)%></td>
+        <td  ><%=rs.getString(2)%></td>
+        <td ><%=(rs.getString(3).trim().contains("restored")) ? "Restored" : "Occured"%></td>
+        <%
+            for (int i = 0; i <= data_string2.length - 1; i++) {%>
+        <td >NA</td>
+        <% }%>
+    </tr>
+    <%
+
+            }   //else
+        }//while
+        if (flag == 0) {
+            out.println("No Tampers For this meter");
+        }
+    }//if
+    //if dates are selected
+    else if (!sdate.equals("") && !edate.equals("")) {
+       
+
+        if (DBUtil.getTargetDB().equals("oracle")) {
+            sql = "select  event_date,(e.event_type)event_name,event_status,data_string,d.event_type,rownum r from "
+                    + "d5_data d,events e where meter_serial_no=(select meter_serial_no from meter where meterid=" + meter_id + ") "
+                    + "and d.event_type=e.event_code and trunc(d5_time_stamp) >=to_date('" + sdate + "','DD/MM/YYYY') "
+                    + "and trunc(d5_time_stamp) <=to_date('" + edate + "','DD/MM/YYYY')and  "
+                    + "d.event_type in (";
+            for (int i = 0; i < values.length; i++) {
+                sql = sql + Integer.parseInt(values[i]) + ",";
+            }
+            sql = sql + "0) "
+                    + "order by d5_time_stamp desc ";
+            pstmt = con.prepareStatement(sql);
+           
+           System.out.println(sql);
+            rs = pstmt.executeQuery();
+
+        } else if (DBUtil.getTargetDB().equals("mysql")) {
+            sql = "select  distinct event_date,e.event_type,event_status,data_string,d.event_type from  d5_data d,events e where d.cdfid in"
+                    + " (select cdfid from  meter_data_time_stamp where meterid=?) and d.event_type=e.event_code and "
+                    + "str_to_date(substr(event_date,1,10),'%d-%m-%Y')>=str_to_date('" + sdate + "','%d/%m/%Y') "
+                    + "and str_to_date(substr(event_date,1,10),'%d-%m-%Y')<=str_to_date('" + edate + "','%d/%m/%Y')and "
+                    + " d.event_type in (";
+            for (int i = 0; i < values.length; i++) {
+                sql = sql + Integer.parseInt(values[i]) + ",";
+            }
+            sql = sql + "0)order by d5_time_stamp desc limit ?,?";
+
+            pstmt = con.prepareStatement(sql);
+            /* if (start == 1) {start = 0;
+            } */
+            start = start - 1;
+            pstmt.setInt(1, Integer.parseInt(meter_id));
+           
+            rs = pstmt.executeQuery();
+
+        }
+        System.out.println("sql query is" + sql);
+
+        String dataString = "";
+        System.out.println("executed--------------->");
+        int flag = 0;
+        while (rs.next()) {
+
+            flag = 1;
+            if ((!rs.getString(5).equals("13"))) {
+                String data_string[] = rs.getString(4).split(",");
+    %>
+    <tr>
+        <td ><%=rs.getString(1)%></td>
+        <td ><%=rs.getString(2)%></td>
+        <td ><%=(rs.getString(3).trim().contains("restored")) ? "Restored" : "Occured"%></td>
+        <% for (int i = 0; i <= data_string.length - 1; i++) {
+                if (meter_id.equals("48") || meter_id.equals("49") || meter_id.equals("51") || meter_id.equals("52") || meter_id.equals("53") || meter_id.equals("54") || meter_id.equals("55") || meter_id.equals("56") || meter_id.equals("57") || meter_id.equals("58")) {
+                    if (i == 9) {
+        %>
+        <td  ><%= twoDecFormat.format(Double.parseDouble(data_string[i]))%></td>
+        <%
+        } else {
+        %>
+        <td  ><%= twoDecFormat.format(Double.parseDouble(data_string[i]))%></td>
+        <% }//else
+        } else {
+        %>
+        <td  ><%= twoDecFormat.format(Double.parseDouble(data_string[i]))%></td>
+        <% }//else
+            }//for%>
+    </tr>
+    <%
+    } else {
+    %>
+    <tr>
+        <td ><%=rs.getString(1)%></td>
+        <td ><%=rs.getString(2)%></td>
+        <td ><%=(rs.getString(3).trim().contains("restored")) ? "Restored" : "Occured"%></td>
+
+        <% for (int i = 0; i <= data_string2.length - 1; i++) {%>
+        <td >NA</td>
+        <% }%>
+
+    </tr>
+    <%
+
+                }//else
+            }//while
+            if (flag == 0) {
+                out.println("No Tampers in these dates");
+            }
+
+        }//elseif
+
+
+    %>
+</tbody>
+</table>
+
+
+
+<%
+    } catch (Exception e) {
+        out.println("Plz Try Again....");
+        e.printStackTrace();
+    }
+%>

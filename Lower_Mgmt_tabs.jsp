@@ -1,0 +1,123 @@
+<style>
+    .button_style
+    {
+        background-color:#EEEEEE;
+        border:1px solid #DDDDDD;
+        color:#666666;
+        padding:3px 15px;
+        text-decoration:none;
+        float:left;
+    }
+    .tab-box {
+        border-bottom: 1px solid #DDD;
+        padding-bottom:5px;
+    }
+    .tab-box a {
+        border:1px solid #DDD;
+        color:#666666;
+        padding: 5px 15px;
+        text-decoration:none;
+        background-color: #eee;
+        font-size:12px;
+    }
+    .tab-box a.activeLink {
+        background-color: #fff;
+        border-bottom: 0;
+        padding: 6px 15px;
+    }
+    /*.tabcontent { border: 1px solid #ddd; border-top: 0; padding-top:45px }*/
+    .hide { display: none;}
+
+
+</style>
+<script type="text/javascript">
+    var reportType;
+    $(document).ready(function() {
+        $(".tabLink").each(function(){
+            $(this).click(function(){
+                tabeId = $(this).attr('id');
+                $(".tabLink").removeClass("activeLink");
+                $(this).addClass("activeLink");
+                $(".tabcontent").addClass("hide");
+                $("#"+tabeId+"-1").removeClass("hide")
+                document.getElementById("report_part").innerHTML="";
+                 if(tabeId=="cont-1")
+                  {
+                      reportType="ElectricInstant";
+                      document.getElementById("metersPart").innerHTML="";
+                     document.getElementById("dates").innerHTML=document.getElementById("singleDate").innerHTML;  
+                     initializeDates();
+                  }
+                if(tabeId=="cont-2")
+                 {
+                     reportType="SupplyAvailability";
+                     document.getElementById("metersPart").innerHTML="";
+                   document.getElementById("dates").innerHTML=document.getElementById("singleDate").innerHTML;  
+                   initializeDates();
+                 }
+                 if(tabeId=="cont-3")
+                 {
+                     reportType="TamperSummary";
+                     metersSel=document.getElementsByName("Mtype");
+                       var meterType ;
+                        for(var i=0;i<metersSel.length;i++){
+                            if(metersSel[i].checked==true)
+                               metersSel[i].checked=false;
+                        }
+                    document.getElementById("dates").innerHTML=document.getElementById("monthDiv").innerHTML;  
+                   initializeMonthPicker();
+                 }
+                return false;
+            });
+        });
+    });
+</script>
+
+
+
+
+<div class="tab-box" style="padding-top: 10px">
+    <a href="#" class="tabLink " id="cont-1">Instantaneous</a>
+    <!--<a href="#" class="tabLink " id="cont-2">Supply Availability</a>
+    <a href="#" class="tabLink " id="cont-3">Tamper summary </a>  -->         
+</div>
+<div class="tabcontent paddingAll" id="cont-1-1"></div> 
+<div class="tabcontent hide" id="cont-2-1"></div> 
+<div class="tabcontent hide" id="cont-3-1"></div> 
+
+<div id="data_part"  style="border:1px solid #87CEEB;margin-top: 1%;margin-left: 2%;margin-right: 2%;width:96%;min-height:50px;">
+    <form name="form1" action="#">
+    <table border="0"  style="margin-top: 1%;margin-left: 2%;margin-right: 2%;width:96%">
+                <tr>
+                <td> 
+                    <select name="SCriteria" id="SCriteria"  onchange="getTowns(this.value,2)"> <!-- 1 for config/ondemand logs and 2 for analysis reports-->
+                      <option value="-1">Select Criteria</option>  
+                      <option value="TW">TownWise</option>
+                      <!--<option value="SD">Subdivision Wise</option>-->
+                    </select> 
+                </td>
+                <td id="towns"></td>
+               <td id="MT"></td>
+               <td >
+                        <div id="metersPart"  ></div>
+                    </td>
+                </tr>             
+            </table> 
+    <div id="dates" style="padding-top:10px;"></div>
+    </form>
+</div>
+<div id="singleDate" style="float: left;padding-top: 15px;padding-left: 5px;display: none;">
+    <table ><tr><td>Select Date:</td><td> <input type="text" id="date"  /></td>      
+            <td rowspan="2"><input type="button" value="Get Report" onclick="getDateReports();"/></td></tr>
+    </table>
+</div>
+<div id="monthDiv" style="float: left;padding-top: 15px;padding-left: 5px;display: none;">
+    <table ><tr><td>Select Month:</td><td> <input type="text" id="month"  /></td>      
+            <td rowspan="2"><input type="button" value="Get Report" onclick="getMonthlyReports();"/></td></tr>
+    </table>
+</div>
+
+ 
+
+
+

@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE struts-config PUBLIC
+          "-//Apache Software Foundation//DTD Struts Configuration 1.3//EN"
+          "http://jakarta.apache.org/struts/dtds/struts-config_1_3.dtd">
+
+
+<struts-config>
+    <form-beans>
+        <form-bean name="LoginForm" type="FormBeans.LoginForm">
+            <field  property="userid" depends="required">
+                <arg0 key="LoginForm.username"/>
+            </field>
+            <field  property="password" depends="required">
+                <arg0 key="LoginForm.password"/>
+            </field>
+        </form-bean>
+
+        <!--newly added fro rtu-->
+        <form-bean name="StrutsUploadForm" type="FormBean.StrutsUploadForm"/>
+        <form-bean name="tamperreq" type="FormBean.Tamper_Req_Form_Bean" />
+        <form-bean name="lsreq" type="FormBean.LS_Req_Form_Bean" />
+
+        <form-bean name="Feeder_AI_Data_Form" type="FormBean.Feeder_AI_Data_Form"/>
+        <form-bean name="feederreq" type="FormBean.Feeder_Req"/>
+
+        <form-bean name="Com_Port_Properties_FormBean" type="FormBean.Com_Port_Properties_FormBean"/>
+        <form-bean  name="FileUploadForm"  type="FormBean.FileUploadForm"/>
+        <form-bean name="comportbean" type="FormBean.ComPortBean"/>
+        <form-bean name="rtuformdatamonitoring" type="FormBean.rtuform" />
+        <form-bean name="rtuaicomplreqform" type="FormBean.RTU_AI_Compl_Data_Req_Form" />
+        <form-bean name="rtudicomplreqform" type="FormBean.RTU_DI_Compl_Data_Req_Form" />
+        <form-bean name="deviceHealthStatusreqform" type="FormBean.HealthStatus_req_form" />
+
+        <form-bean name="rtuform" type="bean.RTUFormBean"/>
+        <form-bean name="AnalogForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        <form-bean name="DigitalForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        <form-bean name="DigitalOutputForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        <form-bean name="loginform" type="bean.UserFormBean"/>
+        <form-bean name="AnalogChild" type="bean.AnalogChild"/>
+        <form-bean name="AnalogResponseForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        <form-bean name="DigitalResponseForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        <form-bean name="DeviceForm" type="FormBean.DeviceForm"/>
+        <form-bean name="dcu" type="bean.DCUBean"/>
+        <form-bean name="masterslave" type="bean.MasterSlaveBean"/>
+        <form-bean name="rtuView" type="bean.RTUViewBean"/>
+
+        <form-bean name="PulseCounterForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        <form-bean name="pulseCounterResponseForm" type="org.apache.struts.validator.LazyValidatorForm"/>
+        
+    
+    </form-beans>
+    
+    <global-exceptions>
+    
+    </global-exceptions>
+
+    <global-forwards>
+        <forward name="welcome"  path="/Welcome.do"/>
+    </global-forwards>
+
+    <action-mappings>
+        <action input="/login2.jsp" name="LoginForm" path="/Login" scope="request" type="ActionBeans.LoginAction" validate="true">
+            <forward name="success" path="/home.jsp"/>
+            <forward name="failure" path="/login2.jsp"/>
+            <forward name="fail" path="/login2.jsp"/>
+        </action>
+        <action path="/Logout" forward="/logout2.jsp"/>
+
+         <!--newly added -->
+
+        <action input="/xml_read.jsp" name="StrutsUploadForm" path="/xmlFileUpload_DB" scope="request" type="action.StrutsUploadAction">
+            <forward name="success" path="/uploadsuccess.jsp"/>
+        </action>
+        <action path="/tamper_data" name="tamperreq" type="action.Tamper_Req_Action" scope="request">
+            <forward name="success" path="/tamper_data.jsp" />
+        </action>
+        <action path="/ls_data" name="lsreq" type="action.LS_Req_Action" scope="request">
+            <forward name="success" path="/ls_data.jsp" />
+        </action>
+
+        <action path="/RTUAnalogData" name="rtuformdatamonitoring"  type="action.AnalogRtuDataAction" scope="request" input="RTUAnalogData.jsp">
+            <forward name="success" path="/RTUAnalogData.jsp"/>
+        </action>
+        <action path="/RTUAnalogDataComplete" name="rtuaicomplreqform"  type="action.RTUAnalogData_Complete" scope="request" input="RTUAnalog_Complete_Data.jsp">
+            <forward name="success" path="/RTUAnalog_Complete_Data.jsp"/>
+        </action>
+        <action path="/RTUDigitalData" name="rtuformdatamonitoring"  type="action.DigitalRtuDataAction" scope="request"  input="RTUDigitalData.jsp">
+            <forward name="success" path="/RTUDigitalData.jsp"/>
+        </action>
+        <action path="/soe_data" name="rtuformdatamonitoring" type="action.SOE_Action" scope="request" input="SOE_Monitoring_Data.jsp">
+            <forward name="success" path="/SOE_Monitoring_Data.jsp" />
+        </action>
+        <action path="/feederdata" name="feederreq" type="action.Feeder_AI_Data_Action" scope="request">
+            <forward name="success" path="/feeder_ai_data.jsp" />
+        </action> 
+
+    </action-mappings>
+    
+    <controller processorClass="org.apache.struts.tiles.TilesRequestProcessor"/>
+
+    <message-resources parameter="com/myapp/struts/ApplicationResource"/>
+    
+    <!-- ========================= Tiles plugin ===============================-->
+    <!--
+    This plugin initialize Tiles definition factory. This later can takes some
+    parameters explained here after. The plugin first read parameters from
+    web.xml, thenoverload them with parameters defined here. All parameters
+    are optional.
+    The plugin should be declared in each struts-config file.
+    - definitions-config: (optional)
+    Specify configuration file names. There can be several comma
+    separated file names (default: ?? )
+    - moduleAware: (optional - struts1.1)
+    Specify if the Tiles definition factory is module aware. If true
+    (default), there will be one factory for each Struts module.
+    If false, there will be one common factory for all module. In this
+    later case, it is still needed to declare one plugin per module.
+    The factory will be initialized with parameters found in the first
+    initialized plugin (generally the one associated with the default
+    module).
+    true : One factory per module. (default)
+    false : one single shared factory for all modules
+    - definitions-parser-validate: (optional)
+    Specify if xml parser should validate the Tiles configuration file.
+    true : validate. DTD should be specified in file header (default)
+    false : no validation
+
+    Paths found in Tiles definitions are relative to the main context.
+    -->
+    <plug-in className="org.apache.struts.tiles.TilesPlugin" >
+        <set-property property="definitions-config" value="/WEB-INF/tiles-defs.xml" />
+        <set-property property="moduleAware" value="true" />
+    </plug-in>
+    
+    <!-- ========================= Validator plugin ================================= -->
+    <plug-in className="org.apache.struts.validator.ValidatorPlugIn">
+        <set-property
+            property="pathnames"
+            value="/WEB-INF/validator-rules.xml,/WEB-INF/validation.xml"/>
+    </plug-in>
+  
+</struts-config>

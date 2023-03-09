@@ -1,0 +1,33 @@
+<%@ page session="false" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.*"%>
+<table cellpadding="2" cellspacing="2" border="1" bgcolor="#EDF5FA" id="dtable"> 
+<thead>
+    <tr>       
+        <td><h3>DiscomName</h3></td>        
+    </tr>
+	</thead>
+	<tbody>
+    <%
+                Connection con = null;
+                Statement st = null;
+                String sql = null;
+                sql = "select * from discom";
+                con = new DBUtil().getConnection();
+                st = con.createStatement();
+                ResultSet rs = st.executeQuery(sql);
+                while (rs.next()) {
+
+    %>
+    <tr>      
+        <td><%=rs.getString("discom_name")%></td>
+        
+    </tr>
+
+
+    <%
+                }
+    %>
+	</tbody>
+</table>

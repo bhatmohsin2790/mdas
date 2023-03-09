@@ -1,0 +1,269 @@
+function getCommStatus(){
+xmlHttp=GetXmlHttpObject();
+if (xmlHttp==null)
+{
+    alert ("Browser does not support HTTP Request");
+    return;
+}
+document.getElementById("pi_chart").innerHTML=document.getElementById("loading").innerHTML;
+var url="home/getCommStatus.jsp";
+xmlHttp.onreadystatechange=commStatusResponse;
+xmlHttp.open("GET",url,false);
+xmlHttp.send(null);
+
+}
+function getLastWeekStatus(){
+     xmlHttp=GetXmlHttpObject();
+if (xmlHttp==null)
+{
+    alert ("Browser does not support HTTP Request");
+    return;
+}
+document.getElementById("week_summary").innerHTML=document.getElementById("loading").innerHTML;
+var url="home/getLastOneWeekSummary.jsp";
+xmlHttp.onreadystatechange=lastWeekStatusResponse;
+xmlHttp.open("GET",url,false);
+xmlHttp.send(null);
+}
+function getTypeCount(){
+ xmlHttp=GetXmlHttpObject();
+if (xmlHttp==null)
+{
+    alert ("Browser does not support HTTP Request");
+    return;
+}
+var url="home/getTypeCount.jsp";
+xmlHttp.onreadystatechange=typeCountResponse;
+xmlHttp.open("GET",url,false);
+xmlHttp.send(null);   
+}
+function getSummaryTable(){
+    xmlHttp=GetXmlHttpObject();
+if (xmlHttp==null)
+{
+    alert ("Browser does not support HTTP Request");
+    return;
+}
+document.getElementById("summary_table").innerHTML=document.getElementById("loading").innerHTML;
+var url="home/getSummaryTable.jsp";
+xmlHttp.onreadystatechange=summaryResponse;
+xmlHttp.open("GET",url,false);
+xmlHttp.send(null);
+}
+function typeCountResponse(){
+   if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+{
+    var showdata = xmlHttp.responseText; 
+
+    document.getElementById("amrcount").innerHTML=showdata.split(",")[0];
+    document.getElementById("dcucount").innerHTML=showdata.split(",")[1];
+    document.getElementById("htcount").innerHTML=showdata.split(",")[2];
+}  
+}
+function lastWeekStatusResponse(){
+    if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+{
+    var showdata = xmlHttp.responseText;       
+    getBarChart(showdata);
+} 
+}
+function commStatusResponse(){
+   if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+{
+    var showdata = xmlHttp.responseText;       
+    getPiChart(showdata.split(",")[0],showdata.split(",")[1],showdata.split(",")[2]);
+}  
+}
+function summaryResponse(){
+    if (xmlHttp.readyState==4 || xmlHttp.readyState=="complete")
+{
+    var showdata = xmlHttp.responseText;
+   // console.log(showdata);
+    document.getElementById("summary_table").innerHTML= showdata;
+    $('#dtable').DataTable();
+}
+}
+function getBarChart(data){
+    var seriesDataBar = [];  //constructor in series to add multiple series at a time
+    var paramNames = new Array();
+    paramNames = ['Rawdata', 'd2', 'b3','b5','d4','d5'];
+    for (var i = 0; i < paramNames.length-1; i++){
+    var dataSeries=new Array();
+    for( j=1;j<data.split(";").length;j++)
+        {
+
+		dataSeries[j-1]=parseInt(data.split(";")[j].split(",")[i]);
+		}
+
+    seriesDataBar.push({ name: paramNames[i],      // adding multiple series(params) values to graph
+                                      data: dataSeries,
+                                      step:true
+
+                                  });
+
+}
+
+    var chart;
+			$(document).ready(function() {
+				chart = new Highcharts.Chart({
+					chart: {
+						renderTo:  'week_summary',
+						defaultSeriesType: 'column',
+                                               // marginRight: 100,
+						marginBottom: 45,
+                                                width:650,
+                                               // borderColor: "#4572A7",
+                                               // borderRadius: 15,
+                                               // borderWidth: 1,
+                                                margin: [0,0,0,0],
+							height:170 
+                                                 
+					},
+					title: {
+						text: ''
+					},
+						credits:{
+						enabled:false
+					},
+					
+					xAxis: {
+                                                   
+                                               title: {
+							text: ''
+
+
+						},
+						categories: data.split(";")[0].split(","),
+                                                min: 0,
+                                                max:6
+					},
+					yAxis: {
+						min: 0,
+						title: {
+							text: 'Values'
+						}
+					},
+					legend: {
+						layout: 'horizontal',
+						backgroundColor: '#FFFFFF',
+						align: 'left',
+						verticalAlign: 'top',
+						x: 30,
+						y: -15,
+						floating: true,
+						shadow: true
+					},
+                                        plotOptions: {
+						column: {
+							pointPadding: 1,
+                                                        pointWidth:5,
+							borderWidth: 0
+						}
+					},
+                                        scrollbar: {
+                                                                enabled: false
+                                                            },
+
+					tooltip: {
+						formatter: function() {
+				                return '<b>'+ this.x +''+'</b><br/> '+ this.y +'';
+						}
+					},
+					
+				        series:seriesDataBar
+				});
+
+
+			});
+                  paramNames={};
+                  paramValues={};
+}
+function getPiChart(comm,notcomm,nevercomm)
+{   
+    var chart;
+    var titleName = '';
+    var dataArray = [];
+    var headerArray = new Array();
+    headerArray = ['Comm', 'Not Comm', 'NeverStarted'];
+
+    dataArray=[  [headerArray[0],parseInt(comm)],
+    [headerArray[1],  parseInt(notcomm)],                
+    [headerArray[2], parseInt(nevercomm)]
+    ];
+$(document).ready(function() {
+   chart = new Highcharts.Chart({
+        colors: ['#00A653', '#FFA500' ,'#85335C','#FF3333'],
+        chart: {
+            renderTo: 'pi_chart',
+            type: 'pie',
+//            backgroundColor:'#E6E6E6',
+            height:170 ,
+//            height: 200,
+            width: 300,
+            margin: [0, 0, 0, 130],
+        spacingTop: 0,
+        spacingBottom: 0,
+        spacingLeft:-10,
+        spacingRight: 0,
+            
+//            options3d: {
+//                enabled: true,
+//                alpha: 45,
+//                beta: 0
+//            }
+        },
+        title: {
+            text: ''
+        },
+        tooltip: {
+            pointFormat: '{' + this.name + '}{point.percentage:.1f}%'
+        },
+        plotOptions: {
+            pie: {
+                size:'90%',
+                allowPointSelect: true,
+                cursor: 'pointer',
+                depth: 5,
+                dataLabels: {
+                    enabled: false,
+                    format: '{point.name} <br /> {point.y}'
+                },
+                showInLegend: true
+            },
+            series: {
+                cursor: 'pointer',
+                point: {
+                    events: {
+                        click: function () {
+                            getHomePieChartMeters(this.name);
+                        }
+                    }
+                }
+            }
+        },
+        legend: {
+            align: 'top',
+            layout: 'vertical',
+            verticalAlign: 'top',
+            labelFormatter: function () {
+                return  this.name+'(' + this.y+')';
+            },
+            x: 5,
+            y: 50,
+            borderWidth: 0
+        },
+        exporting: {
+            enabled: false
+        },
+        credits: {
+            enabled: false
+        },
+        series: [{
+                type: 'pie',
+                //            name: 'Meters Status',
+                data: dataArray
+            }]
+    });
+     });
+
+}

@@ -1,0 +1,51 @@
+<%@page import="in.amitech.db.DBUtil"%>
+<%@ taglib uri="/WEB-INF/struts-bean.tld" prefix="bean" %>
+<%@ page language="java" import="java.sql.*" %>
+
+<script>
+    function open_window()
+    {
+        window.showModalDialog("xml_read.jsp","" ,'status:no;resizable=no;dialogWidth:300px;dialogHeight:500px;dialogHide:true;help:no;scroll:no');
+    }
+</script>
+<%    
+    String user = null;
+    String usertype = null;
+    session = request.getSession(false);
+    user = (String) (session.getAttribute("userid"));
+    usertype = (String) (session.getAttribute("user_type"));
+%>
+
+
+
+<ul id="nav">
+    <li class="top"><a href="<%=response.encodeRedirectURL("masterdata.jsp")%>" id="products" class="top_link"><span class="top_link">Master Data</span></a>
+
+    </li>
+    <li class="top"><a href="<%=response.encodeRedirectURL("meterManage.jsp")%>" id="services" class="top_link"><span>Meter Management</span></a></li>
+    <%-- <%
+    //if usertype is admin
+	if(usertype.equals("admin")){
+    %> --%>
+    <li class="top"><a href="<%=response.encodeRedirectURL("userManage.jsp")%>" id="services" class="top_link"><span>User Management</span></a></li>
+    <%--  <%
+	}
+    %> --%>
+    <li class="top"><a href="<%=response.encodeRedirectURL("dataReportsHome.jsp")%>" id="contacts" class="top_link"><span>Reports</span></a></li>
+    <li class="top"><a href="#" id="contacts" class="top_link"><span>R-APDRP Reports</span></a>
+        <ul class="sub">
+    <li ><a href="<%=response.encodeRedirectURL("AnalysisHome.jsp")%>" id="privacy" ><span class="">Analysis Reports</span></a></li>
+    <li ><a href="<%=response.encodeRedirectURL("Lower_Mgmt_Home.jsp")%>" id="shop"><span>JE/AE Reports</span></a></li>
+    <li ><a href="<%=response.encodeRedirectURL("Higher_Mgmt_Home.jsp")%>" id="shop"><span>CE/MD Reports</span></a></li>
+        </ul>
+    </li>
+   <!-- <li class="top"><a href="<%=response.encodeRedirectURL("alerts.jsp")%>" id="shop" class="top_link"><span>Alerts</span></a></li>
+    <li class="top"><a href="<%=response.encodeRedirectURL("Diagnosis.jsp")%>" id="shop" class="top_link"><span>Modem Diagnosis</span></a></li>-->
+    <li class="top"><a href="#" id="shop" class="top_link"><span>Configurations</span></a>
+        <ul class="sub">
+    <li ><a href="<%=response.encodeRedirectURL("Config_od.jsp")%>" id="privacy" ><span class="">Modem</span></a></li>
+    <li ><a href="<%=response.encodeRedirectURL("DCU_Config_Home.jsp")%>" id="shop"><span>DCU</span></a></li>
+        </ul>
+        </li>
+
+</ul>

@@ -1,0 +1,34 @@
+<%@ page session="false" %>
+<%@ include file="getConnection.jsp"%>
+
+<%!    PreparedStatement pstmt = null;
+    ResultSet rs = null;
+%>
+
+<%
+            try {
+                System.out.println("feeder");
+                String substationid = request.getParameter("emp_id").toString();
+                System.out.println("SubStation Id ---->" + substationid);
+                String data = "0_Select Feeder";
+
+                pstmt = con.prepareStatement("select dcuid from dcuinfo where substationid='" + substationid + "'");
+                rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    pstmt = con.prepareStatement("select * from feeder where dcuid='" + rs.getString("dcuid") + "' order by feedername ");
+                    rs = pstmt.executeQuery();
+                    while (rs.next()) {
+                        data = data + ":" + rs.getString("feederid") + "_" + rs.getString("feedername");
+                    }
+                }
+
+                // data = data +":JKL:Mno:Pqr:"+con;
+                out.println(data);
+                System.out.println("data  "+data);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            finally{
+                con.close();
+            }
+%>

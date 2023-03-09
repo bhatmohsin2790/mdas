@@ -1,0 +1,65 @@
+<%@ page session="false" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.*"%>
+<%@page import="java.text.*"%>
+<table cellpadding="2" cellspacing="2"  bgcolor="#EDF5FA" id="dtable" width="100%">
+    <thead>
+    <tr>
+        <td>Meter</td>
+        <td>Modem</td>
+        <td>Modem Type</td>
+        <td>Make</td>
+        <td>FW.version</td>
+        <td>CD Count</td>
+        <td>IP Count</td>
+        <td>OD Count</td>
+        <td>D2</td>
+        <td>d3_b3</td>
+        <td>d3_b5</td>
+        <td>D4</td>
+        <td>D5</td>
+        
+    </tr>
+    </thead>
+    <tbody>
+    <%
+                Connection con = null;
+                Statement st = null;
+                String sql = null;
+                SimpleDateFormat sdf=new SimpleDateFormat("dd-MM-yyyy");
+sql = "select * from comm_status where comm_date='"+sdf.format(new java.util.Date().getTime()-24*60*60*1000)+"'";
+                con = new DBUtil().getConnection();
+                st = con.createStatement();
+                ResultSet rs = st.executeQuery(sql);
+                int flag=1;
+                while (rs.next()) {
+                 flag=1;
+    %>
+    <tr>
+        <td><%=rs.getString("meter_serial_no")%></td>
+        <td><%=rs.getString("modem_serial_no")%></td>
+        <td><%=rs.getString("device")%></td>
+        <td><%=rs.getString("metermake")%></td>
+        <td><%=rs.getString("fv")%></td>
+        <td><%=rs.getString("cdcrcsuccess")%></td>
+        <td><%=rs.getString("ipcrcsuccess")%></td>
+        <td><%=rs.getString("odcrcsuccess")%></td>
+      //  <td><%=rs.getString("d2")%></td>
+          <td>23</td>
+        <td><%=rs.getString("b3")%></td>
+        <td><%=rs.getString("b5")%></td>
+        <td><%=rs.getString("d4")%></td>
+        <td><%=rs.getString("d5")%></td>
+
+    </tr>
+
+
+    <%
+                }
+if(flag==0){
+ out.print("<tr><td colspan='13'>Loading...</td></tr>");
+}
+    %>
+    </tbody>
+</table>

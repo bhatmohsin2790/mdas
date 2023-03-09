@@ -1,0 +1,161 @@
+<%@ page session="false" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.*"%>
+
+
+<style>
+            #dtr_data h3
+            {background-color:#EEEEEE;
+border:1px solid #DDDDDD;
+color:#666666;
+ width:100px;
+font-size:12px;
+padding:5px 15px;
+text-decoration:none;}
+            .dtr_data
+            {
+           width:100px;
+            }
+        </style>
+<table cellpadding="0" cellspacing="0" border="1" id="dtr_data" width="250px">
+   
+    <tr>
+      <td><h3>Discom</h3></td>
+      <td><h3>Town</h3></td>
+      <td><h3>Substation</h3></td>
+      <td><h3>Feeder</h3></td>
+      <td><h3>DTR</h3></td>
+    </tr>
+    <%
+                int start = Integer.parseInt(request.getParameter("start"));
+                int limit = 10;
+                int range=5;
+                int count = 0;
+                Connection con = null;
+                PreparedStatement ps = null;
+                ResultSet rs = null;
+                String sql = null;
+                sql = "select count(dt.dtrname) from dtr dt,feeder f,dcuinfo dc,substation ss,town t, subdivision sd,division di,circle c, zone z,discom d where z.discom_id=d.discom_id and c.zoneid=z.zoneid and c.circleid=t.circleid and t.townid=di.townid and di.divisionid=sd.divisionid and sd.subdivid=ss.subdivid and dc.substationid=ss.substationid and f.substationid=ss.substationid and dt.feederid=f.feederid";
+                con = new DBUtil().getConnection();
+                ps = con.prepareStatement(sql);
+                rs = ps.executeQuery();
+                if (rs.next()) {
+                    count = rs.getInt(1);
+                }//end if
+                System.out.println("Total Dtrs :" + count);
+               
+                 if (DBUtil.getTargetDB().equals("oracle")) {
+                 sql="select discom_name,townname,substationname,feedername,dtrname from "+
+                      "(select discom_name,townname,substationname,feedername,dtrname,rownum r from "+
+                      "(select d.discom_name,t.townname,ss.substationname,f.feedername,dt.dtrname from dtr dt,feeder f,dcuinfo dc,substation ss,town t, subdivision sd,division di,circle c, zone z,discom d where z.discom_id=d.discom_id and c.zoneid=z.zoneid and c.circleid=t.circleid and t.townid=di.townid and di.divisionid=sd.divisionid and sd.subdivid=ss.subdivid and dc.substationid=ss.substationid "+
+                      " and f.substationid=ss.substationid and dt.feederid=f.feederid order by t.townname,ss.substationname,f.feedername,dt.dtrname) where rownum<=?) where r>=?";
+                /* sql="select d.discom_name,t.townname,ss.substationname,f.feedername,dt.dtrname from dtr dt,feeder f,dcuinfo dc,substation ss,town t, subdivision sd,division di,circle c, zone z,discom d where z.discom_id=d.discom_id and c.zoneid=z.zoneid and c.circleid=di.circleid and di.divisionid=sd.divisionid and t.subdivid=sd.subdivid and ss.townid=t.townid and dc.substationid=ss.substationid "+
+                      "and f.substationid=ss.substationid and dt.feederid=f.feederid";*/
+                 System.out.println("query------->"+sql);
+                ps = con.prepareStatement(sql);
+                ps.setInt(1, (start + limit));
+                ps.setInt(2, start);
+                 } else if (DBUtil.getTargetDB().equals("mysql")) {
+                     sql=" select d.discom_name,t.townname,ss.substationname,f.feedername,dt.dtrname from dtr dt,feeder f,dcuinfo dc,substation ss,town t, subdivision sd,division di,circle c, zone z,discom d where z.discom_id=d.discom_id and c.zoneid=z.zoneid and c.circleid=di.circleid and di.divisionid=sd.divisionid and t.subdivid=sd.subdivid and ss.townid=t.townid and dc.substationid=ss.substationid"+
+                          " and f.substationid=ss.substationid and dt.feederid=f.feederid limit ?,?";
+                      if (start == 1) {
+                                        start = 0;
+                                    }
+                                    ps = con.prepareStatement(sql);                                    
+                                    ps.setInt(1, start);
+                                    ps.setInt(2, start + limit);
+                                }//end else
+                 
+
+                rs = ps.executeQuery();
+                while (rs.next()) {
+
+    %>
+    <tr>
+        <td><%=rs.getString(1)%></td>
+        <td><%=rs.getString(2)%></td>
+        <td><%=rs.getString(3)%></td>
+        <td><%=rs.getString(4)%></td>
+        <td><%=rs.getString(5)%></td>
+    </tr>
+    <%
+                }
+    %>
+</table>
+<!-- code for pagination --->
+<table width="100%" border="0">
+    <tr>
+        <td width="100%" align="center">
+            <table> 
+                <tr>
+                    <%
+
+
+                        // code for previous
+                        int start_tmp = start;
+
+                        // code for page numbers
+                        //  start = 1;
+
+                        if (((Integer.parseInt(request.getParameter("start")) - 1) / 10) + 1 > limit) {
+                    %>
+                    <td id="pageNo" style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:viewDtr(<%=((start_tmp / (limit * 10)) * (limit * 10)) - (limit - 1)%>)" style="text-decoration:none;">Prev 10</a></td>
+                    <%
+                        }
+                        int page_no_start = (start_tmp / (limit * 10)) * (limit * 10) + 1;
+                        int page_no_end = ((start_tmp / (limit * 10)) * (limit * 10)) + (limit * 9);
+                        page_no_start = (page_no_start / limit) + 1;
+                        page_no_end = (page_no_end / limit) + 1;
+
+                        start = 1;
+                        if (page_no_end >= Math.ceil((double) count / (double) limit)) {
+                            page_no_end = (int) Math.ceil((double) count / (double) limit);
+                        }
+
+                        for (int i = 1; i <= Math.ceil((double) count / (double) limit); i++) {
+                            if (i >= page_no_start && i <= page_no_end) {
+                                if (i == ((Integer.parseInt(request.getParameter("start")) - 1) / limit) + 1) {
+                    %>
+
+                    <td id="pageNo" style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:viewDtr(<%=start%>)" style="text-decoration:none;"><%=i%></a></td>
+
+                    <%
+                    } else {
+                    %>
+
+                    <td id="pageNo"><a href="#"  onclick="javascript:viewDtr(<%=start%>)"><%=i%></a></td>
+
+                    <%
+                                }
+                            }
+                            start = start + limit;
+                        }
+                        // code for next
+                        //if((((Integer.parseInt(request.getParameter("start"))-1)/10)+1)>=1)
+                        start = start_tmp;
+                        if (page_no_end >= Math.ceil((double) count / (double) limit)) {
+                        } else {
+                            // start = Integer.parseInt(request.getParameter("start")) + 100;
+
+                            start = (((start_tmp / (limit * 10)) * (limit * 10)) + (limit * 9)) + limit + 1;
+
+                    %>
+
+                    <td id="pageNo"  style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:viewDtr(<%=start%>)" style="text-decoration:none;">Next 10</a></td>
+
+                    <%
+                        }
+
+                    %>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+          </td>
+      </tr>
+  </table>
+<%
+           con.close();
+%>

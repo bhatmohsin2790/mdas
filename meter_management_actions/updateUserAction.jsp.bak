@@ -1,0 +1,83 @@
+<%@ page session="false" %>
+<%@page import="in.amitech.crypt.EncryptPassword"%>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.PreparedStatement"%>
+<%@page import="java.sql.*"%>
+<%
+            Connection con = null;
+            PreparedStatement pst = null;
+            Statement stmt=null;
+            ResultSet rs=null;
+            String sql = null;
+            String userId = null;
+            String pwd=null;
+            String oldpassword = null;
+            String newpassword=null;
+            String userType = null;
+            String isActive = null;
+            String firstName = null;
+            String lastName = null;
+             String officeType = null;
+            String officeTypeId = null;
+            
+            try {
+
+                userId = request.getParameter("userId").trim();
+                oldpassword = request.getParameter("oldpwd").trim();
+                newpassword = request.getParameter("newpwd").trim();
+                userType = request.getParameter("userType").trim();
+                isActive = request.getParameter("isActive").trim();
+                firstName = request.getParameter("firstName").trim();
+                lastName = request.getParameter("lastName").trim();
+                officeType = request.getParameter("officeType").trim();
+                officeTypeId = request.getParameter("officeTypeId").trim();
+                
+                System.out.println("logged in user is ------->"+session.getAttribute("userid"));
+                con = new DBUtil().getConnection();
+                sql="select password from users where user_id='"+userId+"'";
+                 stmt=con.createStatement();
+                 rs=stmt.executeQuery(sql);
+                 if(rs.next()){
+                     if(new EncryptPassword().encrypt(oldpassword).equals(rs.getString("password")))
+                     {
+                         sql="update users set password=?,user_type=?,is_active=?,first_name=?,last_name=?,office_id=?,office_type_id=? where user_id=?";
+                         pst=con.prepareStatement(sql);
+                         pst.setString(1,new EncryptPassword().encrypt(newpassword));
+                         pst.setString(2,userType);
+                         pst.setString(3,isActive);
+                         pst.setString(4,firstName);
+                         pst.setString(5,lastName);
+                         pst.setString(6,officeType);
+                         pst.setString(7,officeTypeId);
+                         pst.setString(8,userId);
+                         if(pst.executeUpdate()>0)
+                           {
+                             out.println("user updated successfully");
+                         }
+                        else{
+                             out.println("Error ,Try again");
+                         }
+                         
+                     }
+                     else
+                      {
+                         System.out.println("password is not matching,Try again");
+                         out.println("password is not matching,Try again");
+                         
+                     }
+                 }
+                
+                
+               
+
+            } catch (Exception e) {
+                System.out.println("Error----------------->" + e.getMessage());
+                e.printStackTrace();
+                out.println(e.getMessage());
+            } finally {
+                if (con != null) {
+                    con.close();
+                }
+            }//end finally
+
+%>

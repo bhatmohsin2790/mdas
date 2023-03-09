@@ -1,0 +1,164 @@
+<%@ page session="false" %>
+<%@page import="in.amitech.db.DBUtil"%>
+<%@page import="java.sql.Statement"%>
+<%@page import="java.sql.*"%>
+<style>
+            #modem_data h3
+            {background-color:#EEEEEE;
+border:1px solid #DDDDDD;
+color:#666666;
+ width:auto;
+font-size:12px;
+padding:5px 15px;
+text-decoration:none;}
+           
+        </style>
+         <div >
+    
+   
+        <table width="75%" border ="1" align="center"  border="0"  id="modem_data" cellspacing="0" cellpadding="0">
+       <tbody>
+       
+      <tr>
+      
+      <td><h3>ModemSlNo</h3></td>      
+      <td><h3>Mobile No</h3></td>
+      <td><h3>IMEI NO</h3></td>
+      <td><h3>STATIC IP</h3></td>
+     
+      
+      </tr>
+<%
+           int start = Integer.parseInt(request.getParameter("start"));
+                int limit = 10;
+                int range=5;
+                int count = 0;
+            Connection con = null;
+            PreparedStatement ps = null;
+            String sql = null;
+            sql="select count(*) from modem";
+             con = new DBUtil().getConnection();
+              ps = con.prepareStatement(sql);
+               ResultSet rs = ps.executeQuery();
+                if (rs.next()) {
+                    count = rs.getInt(1);
+                }//end if
+               // System.out.println("Total Dtrs :" + count);
+                if (DBUtil.getTargetDB().equals("oracle")) {
+                   sql="select modem_serial_no,mobile_no,imei_no,static_ip from"
+                                   +"(select modem_id,modem_serial_no,mobile_no,rownum r,imei_no,static_ip from"
+                                     +"(select modem_id,modem_serial_no,mobile_no,imei_no,static_ip from modem order by modem_id)where rownum<=?) where r>=?" ;
+             
+                    ps = con.prepareStatement(sql);
+                    ps.setInt(1, start + limit);
+                     ps.setInt(2, start);
+                       } else if (DBUtil.getTargetDB().equals("mysql")) {
+                           sql="select modem_serial_no,mobile_no,imei_no,static_ip from modem limit ?,?";
+                            if (start == 1) {
+                                        start = 0;
+                                    }
+                                    ps = con.prepareStatement(sql);                                    
+                                    ps.setInt(1, start);
+                                    ps.setInt(2, start + limit);
+                       }
+
+                rs = ps.executeQuery();
+                    while(rs.next())
+                        {
+
+  %>
+  <tr>
+      <td align="center"><%=rs.getString(1)%></td>
+      <td align="center"><%=rs.getString(2)%></td>
+      <td align="center"><%=rs.getString(3)%></td>
+      <td align="right"><%=rs.getString(4)==null?" ":rs.getString(4)%></td>
+      
+     
+
+  </tr>
+
+
+  <%
+  }
+        %>
+       </tbody></table>
+       <!-- This table contains code to display the page numbers,previous and next hyperlinks  -->
+<table width="100%" border="0">
+      <tr>
+          <td width="100%" align="center">
+  <table>&nbsp;&nbsp;
+    <tr>
+        <%
+
+
+                   // code for previous
+int start_tmp = start;
+
+                // code for page numbers
+               //  start = 1;
+
+                 if(((Integer.parseInt(request.getParameter("start"))-1)/10)+1>10)
+                     {
+                     %>
+        <td id="pageNo" style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:viewModemData(<%=((start_tmp/100)*100)-9%>)" style="text-decoration:none;">Prev 10</a></td>&nbsp;
+        <%
+                     }
+                 int page_no_start = (start_tmp / 100)*100+1;
+                 int page_no_end = ((start_tmp/100)*100)+90;
+                 page_no_start = (page_no_start / 10)+1;
+                 page_no_end =  (page_no_end/10)+1;
+
+                 start =1;
+                 if(page_no_end>=Math.ceil((double) count / (double) limit))
+                     page_no_end = (int)Math.ceil((double) count / (double) limit);
+
+                   for (int i = 1; i <= Math.ceil((double) count / (double) limit); i++)
+                    {
+                    if(i>=page_no_start && i<=page_no_end)
+                        {
+                    if(i==((Integer.parseInt(request.getParameter("start"))-1)/10)+1)
+                        {
+        %>
+
+        <td id="pageNo" style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:viewModemData(<%=start%>)" style="text-decoration:none;"><%=i%></a></td>&nbsp;
+
+        <%
+                       }
+
+                  else
+
+                        {
+        %>
+
+        <td id="pageNo"><a href="#"  onclick="javascript:viewModemData(<%=start%>)"><%=i%></a></td>&nbsp;
+
+        <%
+                        }
+                    }
+                       start = start + limit;
+                        }
+             // code for next
+                        //if((((Integer.parseInt(request.getParameter("start"))-1)/10)+1)>=1)
+                 start = start_tmp;
+                            if(page_no_end>=Math.ceil((double) count / (double) limit))
+                            {}else{
+
+
+                            start=Integer.parseInt(request.getParameter("start"))+100;
+
+%>
+
+        <td id="pageNo"  style="border:1px solid red;padding-right:5px;padding-left:5px;"><a href="#"  onclick="javascript:viewModemData(<%=start%>)" style="text-decoration:none;">Next 10</a></td>&nbsp;
+
+        <%
+        }
+
+%>
+    </tr>
+</table>
+          </td>
+      </tr>
+  </table>
+
+
+   </div>
